@@ -9,7 +9,7 @@ import {
 export default function Admin() {
   const { 
     products, userInfo, backendStatus, addProduct, editProduct, deleteProduct, getAllOrders, deliverOrder, payOrder,
-    getCoupons, createCoupon, toggleCoupon, deleteCoupon,
+    getAllUsers, getCoupons, createCoupon, toggleCoupon, deleteCoupon,
     upiId, qrCode, updateUpiSettings
   } = useContext(ShopContext);
   const navigate = useNavigate();
@@ -48,6 +48,10 @@ export default function Admin() {
   const [coupons, setCoupons] = useState([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
 
+  // Users list state
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+
   // Coupon Form State
   const [couponCode, setCouponCode] = useState('');
   const [couponDiscountType, setCouponDiscountType] = useState('percentage');
@@ -79,10 +83,23 @@ export default function Admin() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error('Could not load users for admin', err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (userInfo?.isAdmin) {
       fetchOrders();
       fetchCoupons();
+      fetchUsers();
     }
   }, [userInfo]);
 
@@ -298,13 +315,31 @@ export default function Admin() {
   // Aggregate Customer Records
   const customerDatabase = React.useMemo(() => {
     const customers = {};
+    
+    // Seed with all registered customers first
+    users.forEach(u => {
+      if (u.isAdmin) return; // skip admins in customer DB
+      const email = u.email;
+      customers[email] = {
+        name: u.name,
+        email: email,
+        phone: u.phone || 'N/A',
+        ordersCount: 0,
+        totalSpent: 0,
+        cities: new Set(),
+        addresses: new Set(),
+        lastOrderDate: u.createdAt || new Date(2026, 0, 1)
+      };
+    });
+
+    // Populate with order activity
     orders.forEach(o => {
       const email = o.user?.email || o.shippingAddress?.email || 'guest@monikascreation.com';
       if (!customers[email]) {
         customers[email] = {
           name: o.user?.name || o.shippingAddress?.fullName || 'Guest Buyer',
           email: email,
-          phone: o.user?.phone || 'N/A',
+          phone: o.user?.phone || o.shippingAddress?.phone || 'N/A',
           ordersCount: 0,
           totalSpent: 0,
           cities: new Set(),
@@ -314,6 +349,11 @@ export default function Admin() {
       }
       customers[email].ordersCount += 1;
       customers[email].totalSpent += o.totalPrice;
+      
+      if (customers[email].phone === 'N/A' || !customers[email].phone) {
+        customers[email].phone = o.user?.phone || o.shippingAddress?.phone || 'N/A';
+      }
+
       if (o.shippingAddress?.city) {
         customers[email].cities.add(o.shippingAddress.city);
       }
@@ -329,12 +369,13 @@ export default function Admin() {
         customers[email].lastOrderDate = o.createdAt;
       }
     });
+
     return Object.values(customers).map(c => ({
       ...c,
       cities: Array.from(c.cities).join(', '),
       addresses: Array.from(c.addresses)
     }));
-  }, [orders]);
+  }, [users, orders]);
 
   const exportSalesToExcel = () => {
     // Only customers with actual sales (purchases)

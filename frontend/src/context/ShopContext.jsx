@@ -625,6 +625,42 @@ export const ShopContextProvider = ({ children }) => {
     }
   };
 
+  const getAllUsers = async () => {
+    try {
+      if (!backendStatus.online) throw new Error('Offline mode active');
+
+      const response = await fetch(`${API_URL}/users`, {
+        headers: {
+          'Authorization': `Bearer ${userInfo?.token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch all users');
+      return await response.json();
+    } catch (err) {
+      console.warn('API get all users failed. Returning local users.', err.message);
+      const localUsers = localStorage.getItem('localUsers') ? JSON.parse(localStorage.getItem('localUsers')) : [];
+      const defaultUsers = [
+        { _id: 'user_owner_id_003', name: "Monika's Creation Owner", email: 'sethswayam21@gmail.com', phone: '0000000000', isAdmin: true, createdAt: new Date().toISOString() },
+        { _id: 'user_admin_id_001', name: "Monika's Admin", email: 'admin@monikascreation.com', phone: '0000000000', isAdmin: true, createdAt: new Date().toISOString() },
+        { _id: 'user_customer_id_002', name: 'Rahul Sharma', email: 'customer@gmail.com', phone: '9876543210', isAdmin: false, createdAt: new Date().toISOString() }
+      ];
+      const allUsers = [...defaultUsers];
+      localUsers.forEach(lu => {
+        if (!allUsers.some(u => u.email.toLowerCase() === lu.email.toLowerCase())) {
+          allUsers.push({
+            _id: lu._id,
+            name: lu.name,
+            email: lu.email,
+            phone: lu.phone,
+            isAdmin: lu.isAdmin,
+            createdAt: lu.createdAt || new Date().toISOString()
+          });
+        }
+      });
+      return allUsers;
+    }
+  };
+
   // Coupon Admin & Checkout Operations
   const getCoupons = async () => {
     try {
@@ -840,6 +876,7 @@ export const ShopContextProvider = ({ children }) => {
         payOrder,
         deliverOrder,
         getAllOrders,
+        getAllUsers,
         addProductReview,
         appliedCoupon,
         setAppliedCoupon,
