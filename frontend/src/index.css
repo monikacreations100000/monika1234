@@ -236,3 +236,158 @@ a {
 .floating {
   animation: float 4s ease-in-out infinite;
 }
+
+/* Premium Graphics and Micro-Animations */
+
+/* Glowing Orbs */
+.glowing-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+  animation: floatOrbs 20s infinite ease-in-out alternate;
+}
+
+.orb-primary {
+  width: 400px;
+  height: 400px;
+  background: var(--primary);
+  top: 10%;
+  right: 5%;
+}
+
+.orb-secondary {
+  width: 500px;
+  height: 500px;
+  background: var(--secondary);
+  bottom: 10%;
+  left: 5%;
+  animation-delay: -5s;
+}
+
+@keyframes floatOrbs {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(40px, -60px) scale(1.1);
+  }
+  100% {
+    transform: translate(-30px, 30px) scale(0.9);
+  }
+}
+
+/* Product Card Enhancements */
+.product-card {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(212, 175, 55, 0.15); /* Accent gold glow */
+  border-color: var(--accent);
+}
+
+.product-image-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.product-img {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.08);
+}
+
+/* Luxury Card Shimmer Effect */
+.product-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: none;
+  pointer-events: none;
+}
+
+.product-card:hover::after {
+  animation: shine 0.8s ease-in-out;
+}
+
+@keyframes shine {
+  100% {
+    left: 125%;
+  }
+}
+
+/* Scroll Trigger Animation Helpers */
+.reveal-element {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), 
+              transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.reveal-element.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Micro bounce for card adding button */
+.btn-card-add {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-card-add:active {
+  transform: scale(0.85);
+}
+
+/* Category Card Zoom on hover */
+.category-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.category-bg-image {
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.category-card:hover .category-bg-image {
+  transform: scale(1.06);
+}
+
+.category-card:hover .category-overlay {
+  background: rgba(74, 14, 78, 0.7); /* Deep plum overlay on hover */
+}
+
+/* Global Responsive and Device Frame Protections */
+img, iframe, video, canvas {
+  max-width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
+
+/* Ensure no horizontal scrollbars on mobile wrappers */
+.app-root-layout, .main-content-area, .home-page, .shop-layout {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}

@@ -173,6 +173,18 @@ export const ShopContextProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [backendStatus, setBackendStatus] = useState({ online: false, type: 'Local Simulation' });
+  const [deletedProductIds, setDeletedProductIds] = useState(() => {
+    const saved = localStorage.getItem('deletedProductIds');
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('deletedProductIds', JSON.stringify(deletedProductIds));
+  }, [deletedProductIds]);
   
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -562,6 +574,14 @@ export const ShopContextProvider = ({ children }) => {
   };
 
   const deleteProduct = async (id) => {
+    // Keep track of deleted product IDs locally so they never reappear in the UI
+    setDeletedProductIds(prev => {
+      if (!prev.includes(id)) {
+        return [...prev, id];
+      }
+      return prev;
+    });
+
     if (backendStatus.online) {
       try {
         const response = await fetch(`${API_URL}/products/${id}`, {
@@ -599,6 +619,13 @@ export const ShopContextProvider = ({ children }) => {
       return updated;
     });
     return true;
+  };
+
+  const resetProducts = () => {
+    setDeletedProductIds([]);
+    localStorage.removeItem('deletedProductIds');
+    localStorage.removeItem('localProducts');
+    fetchProducts();
   };
 
   // Order Operations
@@ -968,7 +995,7 @@ export const ShopContextProvider = ({ children }) => {
   return (
     <ShopContext.Provider
       value={{
-        products,
+        products: products.filter(p => !deletedProductIds.includes(p._id)),
         loading,
         error,
         backendStatus,
@@ -987,6 +1014,7 @@ export const ShopContextProvider = ({ children }) => {
         addProduct,
         editProduct,
         deleteProduct,
+        resetProducts,
         placeOrder,
         getOrderDetails,
         payOrder,

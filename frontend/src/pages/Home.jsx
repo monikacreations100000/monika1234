@@ -34,7 +34,11 @@ export default function Home() {
     <div className="home-page animate-fade">
       {/* Hero Section */}
       <section className="hero-section">
-        <div className="container hero-grid">
+        {/* Decorative glowing background orbs */}
+        <div className="glowing-orb orb-primary"></div>
+        <div className="glowing-orb orb-secondary"></div>
+
+        <div className="container hero-grid" style={{ position: 'relative', zIndex: 1 }}>
           <div className="hero-content">
             <span className="hero-tag">🌸 Handloom Heritage</span>
             <h1 className="hero-title">
@@ -68,7 +72,7 @@ export default function Home() {
       </section>
 
       {/* Category Navigation Cards */}
-      <section className="categories-showcase container">
+      <section className="categories-showcase container reveal-element">
         <div className="section-header">
           <span className="section-tag">Browse Categories</span>
           <h2 className="section-title">Explore Our Curated Works</h2>
@@ -89,7 +93,7 @@ export default function Home() {
       </section>
 
       {/* Featured Products */}
-      <section className="featured-products">
+      <section className="featured-products reveal-element">
         <div className="container">
           <div className="section-header">
             <span className="section-tag">Handpicked For You</span>
@@ -146,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* Promotional Boutique Value Props */}
-      <section id="about-boutique" className="boutique-promo">
+      <section id="about-boutique" className="boutique-promo reveal-element">
         <div className="container promo-grid">
           <div className="promo-info-col">
             <h2 className="promo-title">Handcrafting Dreams Since Years</h2>
@@ -183,7 +187,7 @@ export default function Home() {
       </section>
 
       {/* Boutique Details Map/Contact Card */}
-      <section className="boutique-visit-section container">
+      <section className="boutique-visit-section container reveal-element">
         <div className="glass-panel boutique-visit-grid">
           <div>
             <span className="section-tag" style={{ color: 'var(--secondary)' }}>Namaste & Welcome</span>

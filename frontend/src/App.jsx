@@ -1,6 +1,5 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { SpeedInsights } from "@vercel/speed-insights/react";
+import React, { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -14,6 +13,36 @@ import Admin from './pages/Admin';
 import './App.css';
 
 export default function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll('.reveal-element');
+      elements.forEach(el => observer.observe(el));
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [location]);
   return (
     <div className="app-root-layout">
       {/* Navigation Header */}
@@ -35,9 +64,6 @@ export default function App() {
 
       {/* Footer Details */}
       <Footer />
-
-      {/* Vercel Speed Insights */}
-      <SpeedInsights />
     </div>
   );
 }
