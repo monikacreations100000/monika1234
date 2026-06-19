@@ -29,7 +29,7 @@ router.post('/', protect, async (req, res) => {
         _id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        phone: req.user.phone || ''
+        phone: shippingAddress?.phone || req.user.phone || ''
       },
       orderItems,
       shippingAddress,
@@ -41,6 +41,11 @@ router.post('/', protect, async (req, res) => {
       couponCode,
       discountPrice
     });
+
+    // Update user's phone number in their user profile if provided during checkout
+    if (shippingAddress?.phone && req.user && req.user._id) {
+      await dbAdapter.updateUser(req.user._id, { phone: shippingAddress.phone });
+    }
 
     // Update stock for ordered products
     for (const item of orderItems) {

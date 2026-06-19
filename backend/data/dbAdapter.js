@@ -2,7 +2,10 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Coupon = require('../models/Coupon');
+const Settings = require('../models/Settings');
 const mockData = require('./mockData');
+
+const mockSettings = {};
 
 // Check database mode
 const getDbMode = () => {
@@ -282,6 +285,31 @@ const updateUser = async (id, userData) => {
   return await User.findByIdAndUpdate(id, userData, { new: true });
 };
 
+const getSettings = async (key, defaultValue) => {
+  const mode = getDbMode();
+  if (mode === 'mock') {
+    return mockSettings[key] !== undefined ? mockSettings[key] : defaultValue;
+  }
+  // mongo
+  const setting = await Settings.findOne({ key });
+  return setting ? setting.value : defaultValue;
+};
+
+const updateSettings = async (key, value) => {
+  const mode = getDbMode();
+  if (mode === 'mock') {
+    mockSettings[key] = value;
+    return value;
+  }
+  // mongo
+  const setting = await Settings.findOneAndUpdate(
+    { key },
+    { key, value },
+    { upsert: true, new: true }
+  );
+  return setting.value;
+};
+
 module.exports = {
   findUserByEmail,
   createUser,
@@ -304,5 +332,7 @@ module.exports = {
   createCoupon,
   findCouponById,
   updateCoupon,
-  deleteCoupon
+  deleteCoupon,
+  getSettings,
+  updateSettings
 };

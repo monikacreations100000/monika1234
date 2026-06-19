@@ -110,7 +110,8 @@ router.get('/', protect, admin, async (req, res) => {
     const users = await dbAdapter.getAllUsers();
     // Exclude password from output
     const usersWithoutPassword = users.map(u => {
-      const { password, ...rest } = u;
+      const userObj = typeof u.toObject === 'function' ? u.toObject() : u;
+      const { password, ...rest } = userObj;
       return rest;
     });
     res.json(usersWithoutPassword);

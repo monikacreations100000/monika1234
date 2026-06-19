@@ -214,11 +214,49 @@ export const ShopContextProvider = ({ children }) => {
   const [upiId, setUpiId] = useState(localStorage.getItem('upiId') || 'sethswayam21@okaxis');
   const [qrCode, setQrCode] = useState(localStorage.getItem('qrCode') || '');
 
-  const updateUpiSettings = (newUpiId, newQrCode) => {
+  // Load UPI Settings from backend on initialization
+  useEffect(() => {
+    const fetchUpiSettings = async () => {
+      try {
+        const response = await fetch(`${API_URL}/settings/upi`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.upiId) {
+            setUpiId(data.upiId);
+            localStorage.setItem('upiId', data.upiId);
+          }
+          if (data.qrCode !== undefined) {
+            setQrCode(data.qrCode);
+            localStorage.setItem('qrCode', data.qrCode);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load UPI settings from backend:', err.message);
+      }
+    };
+    fetchUpiSettings();
+  }, [backendStatus.online]);
+
+  const updateUpiSettings = async (newUpiId, newQrCode) => {
     setUpiId(newUpiId);
     localStorage.setItem('upiId', newUpiId);
     setQrCode(newQrCode);
     localStorage.setItem('qrCode', newQrCode);
+
+    try {
+      if (backendStatus.online) {
+        await fetch(`${API_URL}/settings/upi`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userInfo?.token}`
+          },
+          body: JSON.stringify({ upiId: newUpiId, qrCode: newQrCode })
+        });
+      }
+    } catch (err) {
+      console.error('Failed to sync UPI settings to backend:', err.message);
+    }
   };
 
   // Toggle Theme

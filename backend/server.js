@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const couponRoutes = require('./routes/coupons');
+const settingsRoutes = require('./routes/settings');
 const seedData = require('./data/seed');
 
 const app = express();
@@ -107,6 +108,7 @@ app.use('/api/users', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serve static assets
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
