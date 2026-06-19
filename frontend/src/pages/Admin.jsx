@@ -25,12 +25,9 @@ export default function Admin() {
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [additionalImages, setAdditionalImages] = useState([]);
-  const [galleryInputType, setGalleryInputType] = useState('file'); // 'file' or 'url'
-  const [galleryUrl, setGalleryUrl] = useState('');
   const [category, setCategory] = useState('Banarasi Fabric Works');
   const [fabric, setFabric] = useState('Cotton');
   const [stock, setStock] = useState('10');
-  const [imageSourceType, setImageSourceType] = useState('file'); // 'file' or 'url'
   
   // Settings Form States
   const [settingsUpi, setSettingsUpi] = useState(upiId);
@@ -232,11 +229,6 @@ export default function Admin() {
     setCategory(p.category);
     setFabric(p.fabric);
     setStock(p.stock);
-    if (p.image && p.image.startsWith('data:')) {
-      setImageSourceType('file');
-    } else {
-      setImageSourceType('url');
-    }
     window.scrollTo({ top: 300, behavior: 'smooth' });
   };
 
@@ -259,11 +251,9 @@ export default function Admin() {
     setDescription('');
     setImage('');
     setAdditionalImages([]);
-    setGalleryUrl('');
     setCategory('Banarasi Fabric Works');
     setFabric('Cotton');
     setStock('10');
-    setImageSourceType('file');
   };
 
   const handleMarkAsDelivered = async (orderId) => {
@@ -687,85 +677,47 @@ export default function Admin() {
               <div className="admin-form-group">
                 <label className="auth-label">Product Image</label>
                 
-                {/* Switcher Tabs */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setImageSourceType('file'); setImage(''); }}
-                    className={`btn btn-sm ${imageSourceType === 'file' ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ flex: 1, textTransform: 'none', fontSize: '0.8rem', padding: '6px 12px', height: 'auto', fontWeight: '600' }}
-                  >
-                    📁 Upload Image File
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setImageSourceType('url'); setImage(''); }}
-                    className={`btn btn-sm ${imageSourceType === 'url' ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ flex: 1, textTransform: 'none', fontSize: '0.8rem', padding: '6px 12px', height: 'auto', fontWeight: '600' }}
-                  >
-                    🔗 Paste Image URL
-                  </button>
+                <div className="file-upload-zone" style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  background: 'rgba(74, 14, 78, 0.02)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'all 0.3s ease'
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
+                    }}
+                  />
+                  {image ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                      <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }} />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>✓ Image uploaded successfully</span>
+                      <button type="button" onClick={() => setImage('')} className="btn btn-outline btn-xs" style={{ fontSize: '0.7rem', padding: '4px 8px', textTransform: 'none', height: 'auto', fontWeight: '600' }}>
+                        Remove Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: '600' }}>
+                        Drag & drop or click to choose an image file
+                      </p>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP (Max 50MB)</span>
+                    </div>
+                  )}
                 </div>
-
-                {imageSourceType === 'file' ? (
-                  <div className="file-upload-zone" style={{
-                    border: '2px dashed var(--border-color)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '24px 16px',
-                    textAlign: 'center',
-                    background: 'rgba(74, 14, 78, 0.02)',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    transition: 'all 0.3s ease'
-                  }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer'
-                      }}
-                    />
-                    {image ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                        <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }} />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>✓ Image uploaded successfully</span>
-                        <button type="button" onClick={() => setImage('')} className="btn btn-outline btn-xs" style={{ fontSize: '0.7rem', padding: '4px 8px', textTransform: 'none', height: 'auto', fontWeight: '600' }}>
-                          Remove Image
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: '600' }}>
-                          Drag & drop or click to choose an image file
-                        </p>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP (Max 50MB)</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="Paste direct unsplash / web image URL..."
-                      value={image}
-                      onChange={(e) => setImage(e.target.value)}
-                      className="form-input"
-                    />
-                    {image && (
-                      <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img src={image} alt="Preview" onError={(e) => { e.target.style.display = 'none'; }} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }} />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Image URL Preview</span>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Product Gallery Images Field */}
@@ -777,93 +729,48 @@ export default function Admin() {
                   Add multiple pictures to show different angles or details of the product.
                 </span>
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setGalleryInputType('file')}
-                    className={`btn btn-sm ${galleryInputType === 'file' ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ flex: 1, textTransform: 'none', fontSize: '0.75rem', padding: '6px 12px', height: 'auto', fontWeight: '600' }}
-                  >
-                    📁 Upload Gallery File
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGalleryInputType('url')}
-                    className={`btn btn-sm ${galleryInputType === 'url' ? 'btn-primary' : 'btn-outline'}`}
-                    style={{ flex: 1, textTransform: 'none', fontSize: '0.75rem', padding: '6px 12px', height: 'auto', fontWeight: '600' }}
-                  >
-                    🔗 Paste Gallery URL
-                  </button>
-                </div>
-
-                {galleryInputType === 'file' ? (
-                  <div className="file-upload-zone" style={{
-                    border: '2px dashed var(--border-color)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '16px',
-                    textAlign: 'center',
-                    background: 'rgba(74, 14, 78, 0.01)',
-                    cursor: 'pointer',
-                    position: 'relative'
-                  }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files);
-                        files.forEach(file => {
-                          if (file.size > 50 * 1024 * 1024) {
-                            alert(`File "${file.name}" exceeds 50MB limit.`);
-                            return;
-                          }
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setAdditionalImages(prev => [...prev, reader.result]);
-                          };
-                          reader.readAsDataURL(file);
-                        });
-                      }}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        opacity: 0,
-                        cursor: 'pointer'
-                      }}
-                    />
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-color)', margin: 0, fontWeight: '600' }}>
-                      Drag & drop or click to upload multiple images
-                    </p>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP (Max 50MB per file)</span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      type="text"
-                      placeholder="Paste direct image URL..."
-                      value={galleryUrl}
-                      onChange={(e) => setGalleryUrl(e.target.value)}
-                      className="form-input"
-                      style={{ flex: 1, fontSize: '0.85rem' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (galleryUrl.trim()) {
-                          setAdditionalImages(prev => [...prev, galleryUrl.trim()]);
-                          setGalleryUrl('');
+                <div className="file-upload-zone" style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '16px',
+                  textAlign: 'center',
+                  background: 'rgba(74, 14, 78, 0.01)',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      files.forEach(file => {
+                        if (file.size > 50 * 1024 * 1024) {
+                          alert(`File "${file.name}" exceeds 50MB limit.`);
+                          return;
                         }
-                      }}
-                      className="btn btn-primary btn-sm"
-                      style={{ textTransform: 'none', height: 'auto', fontWeight: '700' }}
-                    >
-                      Add URL
-                    </button>
-                  </div>
-                )}
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setAdditionalImages(prev => [...prev, reader.result]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-color)', margin: 0, fontWeight: '600' }}>
+                    Drag & drop or click to upload multiple images
+                  </p>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP (Max 50MB per file)</span>
+                </div>
 
                 {additionalImages.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '14px', background: 'rgba(0,0,0,0.02)', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
