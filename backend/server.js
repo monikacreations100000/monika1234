@@ -107,13 +107,25 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
 
 // Health check / API status route
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'Online',
     brand: "Monika's Creation API",
     database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
     timestamp: new Date()
   });
+});
+
+// Serve static assets in production (copied during build step)
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Fallback to React Router SPA (all non-API routes serve index.html)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'API endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Error handling middleware

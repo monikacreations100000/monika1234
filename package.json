@@ -6,6 +6,7 @@
     "build": "npm run build --prefix frontend && mv frontend/dist public"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "mongodb": "^7.3.0"
   }
 }
