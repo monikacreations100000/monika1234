@@ -58,6 +58,8 @@ global.useMockDb = false;
 // Connect to Database (MongoDB or fallback to Mock Database)
 const dbAdapter = require('./data/dbAdapter');
 
+global.dbConnectionError = null;
+
 const initializeDatabase = async () => {
   // Connect to MongoDB
   const mongoUri = process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
@@ -65,11 +67,12 @@ const initializeDatabase = async () => {
   
   try {
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 3000, // Timeout after 3 seconds
+      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
       family: 4 // Force IPv4 to resolve Atlas DNS issues
     });
     console.log('Successfully connected to MongoDB!');
     global.useMockDb = false;
+    global.dbConnectionError = null;
     
     // Seed initial data if database is empty
     await seedData();
@@ -105,12 +108,13 @@ const initializeDatabase = async () => {
       console.error('Error ensuring owner admin account in MongoDB:', err.message);
     }
   } catch (err) {
+    global.dbConnectionError = err.message;
     console.error('===============================================================');
     console.error('FATAL ERROR: Could not connect to MongoDB database.');
     console.error('Reason:', err.message);
     console.error('FALLING BACK: Mock In-Memory Database is DISABLED.');
     console.error('===============================================================');
-    process.exit(1); // Exit process to fail loudly
+    // DO NOT call process.exit(1) so Vercel does not crash the function initialization
   }
 };
 
@@ -134,10 +138,27 @@ app.use('/uploads', express.static(uploadStaticDir));
 
 // Health check / API status route
 app.get('/api/status', (req, res) => {
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017...';
+  let maskedUri = 'mongodb://...';
+  try {
+    // Mask username and password in URI
+    const match = mongoUri.match(/^(mongodb(?:\+srv)?:\/\/)([^:]+):([^@]+)@(.+)$/);
+    if (match) {
+      maskedUri = `${match[1]}${match[2]}:******@${match[4]}`;
+    } else {
+      maskedUri = mongoUri.substring(0, 20) + '...';
+    }
+  } catch (e) {
+    // ignore
+  }
+
   res.json({
     status: 'Online',
     brand: "Monika's Creation API",
-    database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
+    database: mongoose.connection.readyState === 1 ? 'Connected (MongoDB Atlas)' : 'Disconnected/Offline',
+    dbConnectionState: mongoose.connection.readyState, // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+    dbError: global.dbConnectionError || null,
+    maskedUri,
     timestamp: new Date()
   });
 });

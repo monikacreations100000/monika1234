@@ -174,7 +174,19 @@ export const ShopContextProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Failed to fetch products from live database:', err.message);
-      setError('Could not connect to live database. Please check your network connection.');
+      let details = 'Could not connect to live database. Please check your network connection.';
+      try {
+        const statusRes = await fetch(`${API_URL}/status?_t=${Date.now()}`);
+        if (statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.database === 'Disconnected/Offline' && statusData.dbError) {
+            details = `Database Connection Error: ${statusData.dbError}. Please check Vercel environment variables and ensure MongoDB Atlas Network Access is set to allow all IPs (0.0.0.0/0).`;
+          }
+        }
+      } catch (statusErr) {
+        // ignore
+      }
+      setError(details);
       setProducts([]); // Do not show fake/cached products
       setBackendStatus({ online: false, type: 'Offline' });
     } finally {
