@@ -11,9 +11,14 @@ const seedData = async () => {
     
     // Clean up mock products from database if present
     if (global.useMockDb === false) {
-      const deleteResult = await Product.deleteMany({ _id: { $regex: /^prod_/ } });
-      if (deleteResult.deletedCount > 0) {
-        console.log(`Cleaned up ${deleteResult.deletedCount} mock products from database.`);
+      try {
+        // Convert to string search or ignore if casting fails
+        const deleteResult = await Product.deleteMany({ _id: { $regex: /^prod_/ } });
+        if (deleteResult.deletedCount > 0) {
+          console.log(`Cleaned up ${deleteResult.deletedCount} mock products from database.`);
+        }
+      } catch (e) {
+        // Ignore cast errors on ObjectId
       }
 
       // Seed default products if database is empty
@@ -23,6 +28,15 @@ const seedData = async () => {
         const productsToSeed = mockData.mockProducts.map(p => {
           // Clone the product and omit the _id field so MongoDB auto-generates a standard ObjectId
           const { _id, ...rest } = p;
+          
+          // Also strip mock IDs from sub-documents like reviews so MongoDB can auto-generate ObjectIds for them
+          if (rest.reviews && Array.isArray(rest.reviews)) {
+            rest.reviews = rest.reviews.map(r => {
+              const { _id, ...revRest } = r;
+              return revRest;
+            });
+          }
+          
           return rest;
         });
         await Product.insertMany(productsToSeed);

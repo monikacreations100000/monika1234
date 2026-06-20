@@ -27,8 +27,21 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like curl/Postman) or from allowed origins
-    if (!origin || allowedOrigins.includes(origin)) {
+    // In development mode, allow any origin to access the server
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+
+    // In production, allow requests with no origin, allowed domains, or local network IPs (for testing)
+    const isLocalNetwork = origin && (
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1') ||
+      origin.startsWith('http://192.168.') ||
+      origin.startsWith('http://10.') ||
+      origin.startsWith('http://172.')
+    );
+
+    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -92,13 +105,12 @@ const initializeDatabase = async () => {
       console.error('Error ensuring owner admin account in MongoDB:', err.message);
     }
   } catch (err) {
-    console.warn('===============================================================');
-    console.warn('WARNING: Could not connect to MongoDB database.');
-    console.warn('Reason:', err.message);
-    console.warn('FALLING BACK: Running with an in-memory Mock Database.');
-    console.warn('All features (Auth, Cart, Checkout, Admin) remain operational.');
-    console.warn('===============================================================');
-    global.useMockDb = true;
+    console.error('===============================================================');
+    console.error('FATAL ERROR: Could not connect to MongoDB database.');
+    console.error('Reason:', err.message);
+    console.error('FALLING BACK: Mock In-Memory Database is DISABLED.');
+    console.error('===============================================================');
+    process.exit(1); // Exit process to fail loudly
   }
 };
 
@@ -164,7 +176,7 @@ const PORT = process.env.PORT || 5000;
 let server = null;
 
 const startServer = (retries = 5) => {
-  server = app.listen(PORT, () => {
+  server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT} in ${global.useMockDb ? 'MOCK' : 'MONGO'} database mode.`);
   });
 

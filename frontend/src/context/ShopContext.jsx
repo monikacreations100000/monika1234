@@ -8,17 +8,7 @@ export const ShopContextProvider = ({ children }) => {
   const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   // State Declarations
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('localProducts');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return localMockProducts;
-      }
-    }
-    return localMockProducts;
-  });
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [backendStatus, setBackendStatus] = useState({ online: false, type: 'Local Simulation' });
@@ -157,22 +147,13 @@ export const ShopContextProvider = ({ children }) => {
       }
       const data = await response.json();
       setProducts(data);
-      localStorage.setItem('localProducts', JSON.stringify(data));
-      setBackendStatus({ online: true, type: 'Full Database' });
+      setBackendStatus({ online: true, type: 'Live Database' });
       setError(null);
     } catch (err) {
-      console.log('Backend offline or unreachable. Using offline simulated mode.', err.message);
-      const saved = localStorage.getItem('localProducts');
-      if (saved) {
-        try {
-          setProducts(JSON.parse(saved));
-        } catch (e) {
-          setProducts(localMockProducts);
-        }
-      } else {
-        setProducts(localMockProducts);
-      }
-      setBackendStatus({ online: false, type: 'Local Simulation (Offline)' });
+      console.error('Failed to fetch products from live database:', err.message);
+      setError('Could not connect to live database. Please check your network connection.');
+      setProducts([]); // Do not show fake/cached products
+      setBackendStatus({ online: false, type: 'Offline' });
     } finally {
       setLoading(false);
     }
@@ -200,55 +181,7 @@ export const ShopContextProvider = ({ children }) => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       return { success: true, user: data };
     } catch (err) {
-      console.warn('API login failed, checking local fallback credentials.', err.message);
-      
-      const normalizedEmail = email.trim().toLowerCase();
-      
-      // Local Auth simulation (supporting both seed owner and common admin test credentials)
-      const isOwner = normalizedEmail === 'sethswayam21@gmail.com' && password === 'Monik@6306';
-      const isTestAdmin = (normalizedEmail === 'admin@gmail.com' || normalizedEmail === 'admin@monikascreation.com' || normalizedEmail === 'admin') && password === 'admin123';
-      
-      if (isOwner || isTestAdmin) {
-        const mockAdmin = {
-          _id: 'user_owner_id_003',
-          name: isOwner ? "Monika's Creation Owner" : "Simulated Admin",
-          email: isOwner ? 'sethswayam21@gmail.com' : normalizedEmail,
-          isAdmin: true,
-          token: 'mock-jwt-owner-token'
-        };
-        setUserInfo(mockAdmin);
-        localStorage.setItem('userInfo', JSON.stringify(mockAdmin));
-        return { success: true, user: mockAdmin };
-      } else if (normalizedEmail === 'customer@gmail.com' && password === 'user123') {
-        const mockUser = {
-          _id: 'user_customer_id_002',
-          name: 'Rahul Sharma',
-          email: 'customer@gmail.com',
-          isAdmin: false,
-          token: 'mock-jwt-user-token'
-        };
-        setUserInfo(mockUser);
-        localStorage.setItem('userInfo', JSON.stringify(mockUser));
-        return { success: true, user: mockUser };
-      }
-
-      // Check if it is a locally registered customer in localStorage
-      const localUsers = localStorage.getItem('localUsers') ? JSON.parse(localStorage.getItem('localUsers')) : [];
-      const matchedUser = localUsers.find(u => u.email.toLowerCase() === normalizedEmail && u.password === password);
-      if (matchedUser) {
-        const mockUser = {
-          _id: matchedUser._id,
-          name: matchedUser.name,
-          email: matchedUser.email,
-          isAdmin: false,
-          token: 'mock-jwt-registered-token'
-        };
-        setUserInfo(mockUser);
-        localStorage.setItem('userInfo', JSON.stringify(mockUser));
-        return { success: true, user: mockUser };
-      }
-      
-      // Prevent showing raw JSON parse errors to the user by sanitizing the error message
+      console.error('API login failed:', err.message);
       let cleanMsg = err.message;
       if (cleanMsg.includes('Unexpected token') || cleanMsg.includes('not valid JSON') || cleanMsg.includes('JSON') || cleanMsg.includes('unreachable') || cleanMsg.includes('Failed to fetch')) {
         cleanMsg = 'Invalid email or password';
@@ -275,37 +208,8 @@ export const ShopContextProvider = ({ children }) => {
       localStorage.setItem('userInfo', JSON.stringify(data));
       return { success: true };
     } catch (err) {
-      console.warn('API registration failed, using local fallback registration.', err.message);
-      
-      const normalizedEmail = email.trim().toLowerCase();
-      const localUsers = localStorage.getItem('localUsers') ? JSON.parse(localStorage.getItem('localUsers')) : [];
-      
-      if (localUsers.some(u => u.email.toLowerCase() === normalizedEmail)) {
-        throw new Error('User already exists');
-      }
-
-      const newLocalUser = {
-        _id: 'user_mock_' + Math.random().toString(36).substr(2, 9),
-        name,
-        email: normalizedEmail,
-        password,
-        phone,
-        isAdmin: false
-      };
-      localUsers.push(newLocalUser);
-      localStorage.setItem('localUsers', JSON.stringify(localUsers));
-
-      const newMockUser = {
-        _id: newLocalUser._id,
-        name,
-        email: normalizedEmail,
-        phone,
-        isAdmin: false,
-        token: 'mock-jwt-registered-token-' + Date.now()
-      };
-      setUserInfo(newMockUser);
-      localStorage.setItem('userInfo', JSON.stringify(newMockUser));
-      return { success: true };
+      console.error('API registration failed:', err.message);
+      throw new Error(err.message || 'Registration failed');
     }
   };
 
