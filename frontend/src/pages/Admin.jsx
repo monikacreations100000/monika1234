@@ -226,19 +226,27 @@ export default function Admin() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !price || !image.trim() || !description.trim()) {
-      alert('Please fill in all product fields');
+    let mainImage = image;
+    let extraImages = [...additionalImages];
+
+    // Fallback: If no main image is uploaded, but gallery images are present, promote the first gallery image as the main image
+    if (!mainImage.trim() && extraImages.length > 0) {
+      mainImage = extraImages[0];
+    }
+
+    if (!name.trim() || !price || !mainImage.trim() || !description.trim()) {
+      alert('Please fill in all product fields (Product Name, Price, Product Image, and Description)');
       return;
     }
 
     // Prepare full image list including the main image and any additional gallery images
-    const allImages = [image, ...additionalImages].filter(Boolean);
+    const allImages = [mainImage, ...extraImages].filter(Boolean);
 
     const productPayload = {
       name,
       price: Number(price),
       description,
-      image,
+      image: mainImage,
       images: allImages,
       category,
       fabric,
