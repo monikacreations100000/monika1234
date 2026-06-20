@@ -1045,6 +1045,79 @@ export const ShopContextProvider = ({ children }) => {
     }
   };
 
+  const uploadFile = async (file) => {
+    if (!backendStatus.online) {
+      // Offline fallback: return a mock or base64 URL
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_URL}/upload/single`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userInfo?.token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      return data.url; // Returns "/uploads/filename"
+    } catch (err) {
+      console.error('File upload failed:', err.message);
+      throw err;
+    }
+  };
+
+  const uploadMultipleFiles = async (files) => {
+    if (!backendStatus.online) {
+      // Offline fallback: convert all to base64
+      const promises = Array.from(files).map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      });
+      return Promise.all(promises);
+    }
+
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch(`${API_URL}/upload/multiple`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userInfo?.token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Multiple upload failed');
+      }
+
+      const data = await response.json();
+      return data.urls; // Returns array of "/uploads/filename"
+    } catch (err) {
+      console.error('Multiple file upload failed:', err.message);
+      throw err;
+    }
+  };
+
   return (
     <ShopContext.Provider
       value={{
@@ -1076,6 +1149,8 @@ export const ShopContextProvider = ({ children }) => {
         getAllOrders,
         getAllUsers,
         addProductReview,
+        uploadFile,
+        uploadMultipleFiles,
         appliedCoupon,
         setAppliedCoupon,
         getCoupons,

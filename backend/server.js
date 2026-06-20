@@ -12,6 +12,7 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const couponRoutes = require('./routes/coupons');
 const settingsRoutes = require('./routes/settings');
+const uploadRoutes = require('./routes/upload');
 const seedData = require('./data/seed');
 
 const app = express();
@@ -109,10 +110,12 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Serve static assets
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendDistPath));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check / API status route
 app.get('/api/status', (req, res) => {

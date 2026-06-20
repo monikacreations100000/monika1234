@@ -50,7 +50,7 @@ export default function Admin() {
   const { 
     products, userInfo, backendStatus, addProduct, editProduct, deleteProduct, getAllOrders, deliverOrder, payOrder,
     getAllUsers, getCoupons, createCoupon, toggleCoupon, deleteCoupon,
-    upiId, qrCode, updateUpiSettings
+    upiId, qrCode, updateUpiSettings, uploadFile, uploadMultipleFiles
   } = useContext(ShopContext);
   const navigate = useNavigate();
 
@@ -73,6 +73,9 @@ export default function Admin() {
   const [settingsUpi, setSettingsUpi] = useState(upiId);
   const [settingsQr, setSettingsQr] = useState(qrCode);
   const [qrSourceType, setQrSourceType] = useState(qrCode ? 'file' : 'none');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
 
   useEffect(() => {
     setSettingsUpi(upiId);
@@ -200,22 +203,22 @@ export default function Admin() {
     );
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
         alert('Image size exceeds 50MB limit. Please choose a smaller image.');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result, 1000, 1000, 0.7);
-        setImage(compressed);
-      };
-      reader.onerror = () => {
-        alert('Failed to read image file');
-      };
-      reader.readAsDataURL(file);
+      setUploadingImage(true);
+      try {
+        const url = await uploadFile(file);
+        setImage(url);
+      } catch (err) {
+        alert(err.message || 'Failed to upload image file');
+      } finally {
+        setUploadingImage(false);
+      }
     }
   };
 
@@ -742,7 +745,13 @@ export default function Admin() {
                       cursor: 'pointer'
                     }}
                   />
-                  {image ? (
+                  {uploadingImage ? (
+                    <div style={{ padding: '10px' }}>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: '600' }}>
+                        Uploading image... Please wait...
+                      </p>
+                    </div>
+                  ) : image ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }} />
                       <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>✓ Image uploaded successfully</span>
@@ -783,20 +792,28 @@ export default function Admin() {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => {
+                    disabled={uploadingGallery}
+                    onChange={async (e) => {
                       const files = Array.from(e.target.files);
-                      files.forEach(file => {
+                      const validFiles = [];
+                      for (const file of files) {
                         if (file.size > 50 * 1024 * 1024) {
                           alert(`File "${file.name}" exceeds 50MB limit.`);
-                          return;
+                          continue;
                         }
-                        const reader = new FileReader();
-                        reader.onloadend = async () => {
-                          const compressed = await compressImage(reader.result, 1000, 1000, 0.7);
-                          setAdditionalImages(prev => [...prev, compressed]);
-                        };
-                        reader.readAsDataURL(file);
-                      });
+                        validFiles.push(file);
+                      }
+                      if (validFiles.length === 0) return;
+                      
+                      setUploadingGallery(true);
+                      try {
+                        const urls = await uploadMultipleFiles(validFiles);
+                        setAdditionalImages(prev => [...prev, ...urls]);
+                      } catch (err) {
+                        alert(err.message || 'Failed to upload gallery images');
+                      } finally {
+                        setUploadingGallery(false);
+                      }
                     }}
                     style={{
                       position: 'absolute',
@@ -809,7 +826,7 @@ export default function Admin() {
                     }}
                   />
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-color)', margin: 0, fontWeight: '600' }}>
-                    Drag & drop or click to upload multiple images
+                    {uploadingGallery ? 'Uploading gallery images...' : 'Drag & drop or click to upload multiple images'}
                   </p>
                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Supports JPG, PNG, WEBP (Max 50MB per file)</span>
                 </div>
@@ -1370,15 +1387,23 @@ export default function Admin() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    disabled={uploadingQr}
+                    onChange={async (e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = async () => {
-                          const compressed = await compressImage(reader.result, 400, 400, 0.7);
-                          setSettingsQr(compressed);
-                        };
-                        reader.readAsDataURL(file);
+                        if (file.size > 50 * 1024 * 1024) {
+                          alert('Image size exceeds 50MB limit.');
+                          return;
+                        }
+                        setUploadingQr(true);
+                        try {
+                          const url = await uploadFile(file);
+                          setSettingsQr(url);
+                        } catch (err) {
+                          alert(err.message || 'Failed to upload QR Code');
+                        } finally {
+                          setUploadingQr(false);
+                        }
                       }
                     }}
                     className="form-input"
@@ -1386,7 +1411,11 @@ export default function Admin() {
                   />
                 </div>
 
-                {settingsQr && (
+                {uploadingQr ? (
+                  <div style={{ marginTop: '14px', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-color)' }}>
+                    Uploading QR Code...
+                  </div>
+                ) : settingsQr ? (
                   <div style={{ marginTop: '14px', textAlign: 'center' }}>
                     <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px' }}>QR Code Preview:</span>
                     <img
@@ -1395,7 +1424,7 @@ export default function Admin() {
                       style={{ maxWidth: '140px', maxHeight: '140px', borderRadius: '4px', border: '1px solid var(--border-color)', background: '#fff', padding: '6px' }}
                     />
                   </div>
-                )}
+                ) : null}
               </div>
             )}
 
