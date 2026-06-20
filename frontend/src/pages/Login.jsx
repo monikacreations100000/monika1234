@@ -5,7 +5,7 @@ import { ShopContext } from '../context/ShopContext';
 const API_URL = '/api';
 
 export default function Login() {
-  const { loginUser, registerUser, logoutUser, userInfo, backendStatus, error } = useContext(ShopContext);
+  const { loginUser, registerUser, logoutUser, userInfo } = useContext(ShopContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -89,11 +89,6 @@ export default function Login() {
         </div>
 
         {/* Error / Success banners */}
-        {!backendStatus.online && (
-          <div className="error-banner" style={{ marginBottom: '16px', background: 'rgba(211, 47, 47, 0.08)', border: '1px solid rgba(211, 47, 47, 0.3)', color: '#d32f2f' }}>
-            ⚠️ {error || 'Database is offline. Unable to connect to live services.'}
-          </div>
-        )}
         {errorMsg && <div className="error-banner">{errorMsg}</div>}
         {successMsg && !errorMsg && (
           <div style={{
