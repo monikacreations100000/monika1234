@@ -115,7 +115,10 @@ app.use('/api/upload', uploadRoutes);
 // Serve static assets
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendDistPath));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadStaticDir = process.env.VERCEL 
+  ? '/tmp/uploads' 
+  : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadStaticDir));
 
 // Health check / API status route
 app.get('/api/status', (req, res) => {
