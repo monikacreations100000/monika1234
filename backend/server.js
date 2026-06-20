@@ -47,7 +47,7 @@ const dbAdapter = require('./data/dbAdapter');
 
 const initializeDatabase = async () => {
   // Connect to MongoDB
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/monikas_creation';
+  const mongoUri = process.env.MONGODB_URI || 'mongodb://monikacreations455_db_user:893508@ac-ve93rku-shard-00-00.rfzbldl.mongodb.net:27017,ac-ve93rku-shard-00-01.rfzbldl.mongodb.net:27017,ac-ve93rku-shard-00-02.rfzbldl.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
   console.log('Connecting to MongoDB database...');
   
   try {
