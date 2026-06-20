@@ -288,154 +288,102 @@ export const ShopContextProvider = ({ children }) => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   };
 
-  // Product Admin Operations (CRUD simulated / API)
+  // Product Admin Operations (CRUD API-only)
   const addProduct = async (productData) => {
-    if (backendStatus.online) {
-      try {
-        const response = await fetch(`${API_URL}/products`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userInfo?.token}`
-          },
-          body: JSON.stringify(productData)
-        });
-        const contentType = response.headers.get('content-type');
-        if (!response.ok) {
-          let errorMsg = 'Failed to create product';
-          if (contentType && contentType.includes('application/json')) {
-            const errData = await response.json();
-            errorMsg = errData.message || errorMsg;
-          }
-          throw new Error(errorMsg);
-        }
-
-        if (contentType && contentType.includes('application/json')) {
-          const serverProduct = await response.json();
-          await fetchProducts();
-          return serverProduct;
-        }
-      } catch (err) {
-        console.error('API create product failed:', err.message);
-        throw err;
-      }
+    if (!backendStatus.online) {
+      throw new Error('Database is offline. Cannot create product.');
     }
+    try {
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userInfo?.token}`
+        },
+        body: JSON.stringify(productData)
+      });
+      const contentType = response.headers.get('content-type');
+      if (!response.ok) {
+        let errorMsg = 'Failed to create product';
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await response.json();
+          errorMsg = errData.message || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
 
-    // Offline fallback
-    const newId = 'prod_local_' + Math.random().toString(36).substr(2, 9);
-    const newLocalProduct = {
-      _id: newId,
-      ...productData,
-      price: Number(productData.price),
-      stock: Number(productData.stock),
-      images: productData.images || [],
-      rating: 4.5,
-      numReviews: 0,
-      reviews: [],
-      createdAt: new Date().toISOString()
-    };
-    setProducts(prev => {
-      const updated = [newLocalProduct, ...prev];
-      localStorage.setItem('localProducts', JSON.stringify(updated));
-      return updated;
-    });
-    return newLocalProduct;
+      if (contentType && contentType.includes('application/json')) {
+        const serverProduct = await response.json();
+        await fetchProducts();
+        return serverProduct;
+      }
+    } catch (err) {
+      console.error('API create product failed:', err.message);
+      throw err;
+    }
   };
 
   const editProduct = async (id, productData) => {
-    if (backendStatus.online) {
-      try {
-        const response = await fetch(`${API_URL}/products/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userInfo?.token}`
-          },
-          body: JSON.stringify(productData)
-        });
-        const contentType = response.headers.get('content-type');
-        if (!response.ok) {
-          let errorMsg = 'Failed to update product';
-          if (contentType && contentType.includes('application/json')) {
-            const errData = await response.json();
-            errorMsg = errData.message || errorMsg;
-          }
-          throw new Error(errorMsg);
-        }
-
-        if (contentType && contentType.includes('application/json')) {
-          const serverProduct = await response.json();
-          await fetchProducts();
-          return serverProduct;
-        }
-      } catch (err) {
-        console.error('API edit product failed:', err.message);
-        throw err;
-      }
+    if (!backendStatus.online) {
+      throw new Error('Database is offline. Cannot update product.');
     }
-
-    // Offline fallback
-    setProducts(prev => {
-      const updated = prev.map(p => {
-        if (p._id === id) {
-          return {
-            ...p,
-            ...productData,
-            price: Number(productData.price),
-            stock: Number(productData.stock),
-            images: productData.images || p.images || []
-          };
-        }
-        return p;
+    try {
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userInfo?.token}`
+        },
+        body: JSON.stringify(productData)
       });
-      localStorage.setItem('localProducts', JSON.stringify(updated));
-      return updated;
-    });
-    return { _id: id, ...productData };
+      const contentType = response.headers.get('content-type');
+      if (!response.ok) {
+        let errorMsg = 'Failed to update product';
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await response.json();
+          errorMsg = errData.message || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
+      if (contentType && contentType.includes('application/json')) {
+        const serverProduct = await response.json();
+        await fetchProducts();
+        return serverProduct;
+      }
+    } catch (err) {
+      console.error('API edit product failed:', err.message);
+      throw err;
+    }
   };
 
   const deleteProduct = async (id) => {
-    // Keep track of deleted product IDs locally so they never reappear in the UI
-    setDeletedProductIds(prev => {
-      if (!prev.includes(id)) {
-        return [...prev, id];
-      }
-      return prev;
-    });
-
-    if (backendStatus.online) {
-      try {
-        const response = await fetch(`${API_URL}/products/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${userInfo?.token}`
-          }
-        });
-        const contentType = response.headers.get('content-type');
-        if (!response.ok) {
-          let errorMsg = 'Failed to delete product';
-          if (contentType && contentType.includes('application/json')) {
-            const errData = await response.json();
-            errorMsg = errData.message || errorMsg;
-          }
-          throw new Error(errorMsg);
-        }
-
-        await fetchProducts();
-        return true;
-      } catch (err) {
-        console.error('API delete product failed:', err.message);
-        throw err;
-      }
+    if (!backendStatus.online) {
+      throw new Error('Database is offline. Cannot delete product.');
     }
+    try {
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${userInfo?.token}`
+        }
+      });
+      const contentType = response.headers.get('content-type');
+      if (!response.ok) {
+        let errorMsg = 'Failed to delete product';
+        if (contentType && contentType.includes('application/json')) {
+          const errData = await response.json();
+          errorMsg = errData.message || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
 
-    // Offline fallback
-    setProducts(prev => {
-      const updated = prev.filter(p => p._id !== id);
-      localStorage.setItem('localProducts', JSON.stringify(updated));
-      return updated;
-    });
-    return true;
+      await fetchProducts();
+      return true;
+    } catch (err) {
+      console.error('API delete product failed:', err.message);
+      throw err;
+    }
   };
 
   const resetProducts = () => {
