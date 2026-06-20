@@ -149,6 +149,29 @@ export const ShopContextProvider = ({ children }) => {
       setProducts(data);
       setBackendStatus({ online: true, type: 'Live Database' });
       setError(null);
+
+      // Clear local storage of mock databases
+      localStorage.removeItem('localProducts');
+      localStorage.removeItem('localUsers');
+      localStorage.removeItem('localOrders');
+
+      // Reset deletedProductIds to prevent hiding live products
+      setDeletedProductIds([]);
+      localStorage.removeItem('deletedProductIds');
+
+      // If logged in with a simulated mock user token, log out to require a fresh live database login
+      const savedUser = localStorage.getItem('userInfo');
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && parsed.token && (parsed.token.startsWith('mock-jwt-') || parsed.token === 'mock-jwt-owner-token')) {
+            setUserInfo(null);
+            localStorage.removeItem('userInfo');
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch products from live database:', err.message);
       setError('Could not connect to live database. Please check your network connection.');
