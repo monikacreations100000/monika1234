@@ -62,6 +62,7 @@ const initializeDatabase = async () => {
   // Connect to MongoDB
   const mongoUri = process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
   console.log('Connecting to MongoDB database...');
+  console.log('Loaded URI:', mongoUri.replace(/:([^@]+)@/, ':****@'));
   
   try {
     await mongoose.connect(mongoUri, {
