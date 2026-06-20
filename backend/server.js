@@ -78,13 +78,13 @@ const initializeDatabase = async () => {
     // Ensure owner account always exists with admin rights in MongoDB
     try {
       const bcrypt = require('bcryptjs');
-      const ownerEmail = 'sethswayam21@gmail.com';
+      const ownerEmail = 'monikacreations100000@gmail.com';
       
       const ownerExists = await dbAdapter.findUserByEmail(ownerEmail);
       if (!ownerExists) {
         console.log('Owner account not found in MongoDB. Seeding owner account...');
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('Monik@6306', salt);
+        const hashedPassword = await bcrypt.hash('8935086', salt);
         await dbAdapter.createUser({
           name: "Monika's Creation Owner",
           email: ownerEmail,
@@ -95,7 +95,7 @@ const initializeDatabase = async () => {
         console.log('Owner account seeded in MongoDB successfully.');
       } else {
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('Monik@6306', salt);
+        const hashedPassword = await bcrypt.hash('8935086', salt);
         await dbAdapter.updateUser(ownerExists._id, {
           isAdmin: true,
           password: hashedPassword

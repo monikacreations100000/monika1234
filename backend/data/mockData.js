@@ -4,13 +4,13 @@ const bcrypt = require('bcryptjs');
 const salt = bcrypt.genSaltSync(10);
 const hashedAdminPassword = bcrypt.hashSync('admin123', salt);
 const hashedUserPassword = bcrypt.hashSync('user123', salt);
-const hashedOwnerPassword = bcrypt.hashSync('Monik@6306', salt);
+const hashedOwnerPassword = bcrypt.hashSync('8935086', salt);
 
 const mockUsers = [
   {
     _id: 'user_owner_id_003',
     name: "Monika's Creation Owner",
-    email: 'sethswayam21@gmail.com',
+    email: 'monikacreations100000@gmail.com',
     password: hashedOwnerPassword,
     isAdmin: true,
     createdAt: new Date()

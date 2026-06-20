@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
         const mockData = require('../data/mockData');
         let user;
         if (token.includes('owner') || token.includes('admin')) {
-          user = mockData.findUserByEmail('sethswayam21@gmail.com');
+          user = mockData.findUserByEmail('monikacreations100000@gmail.com');
         } else {
           user = mockData.findUserByEmail('customer@gmail.com') || mockData.mockUsers[1];
         }
