@@ -18,7 +18,8 @@ const generateToken = (id) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await dbAdapter.findUserByEmail(email);
+    const emailNormalized = email ? email.trim().toLowerCase() : '';
+    const user = await dbAdapter.findUserByEmail(emailNormalized);
 
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
@@ -47,7 +48,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    const userExists = await dbAdapter.findUserByEmail(email);
+    const emailNormalized = email ? email.trim().toLowerCase() : '';
+    const userExists = await dbAdapter.findUserByEmail(emailNormalized);
 
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
@@ -58,7 +60,7 @@ router.post('/', async (req, res) => {
 
     const user = await dbAdapter.createUser({
       name,
-      email,
+      email: emailNormalized,
       password: hashedPassword,
       phone,
     });

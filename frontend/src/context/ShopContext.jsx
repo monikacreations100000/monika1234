@@ -165,10 +165,11 @@ export const ShopContextProvider = ({ children }) => {
 
   const loginUser = async (email, password) => {
     try {
+      const cleanEmail = email ? email.trim().toLowerCase() : '';
       const response = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: cleanEmail, password })
       });
 
       const contentType = response.headers.get('content-type');
@@ -192,10 +193,11 @@ export const ShopContextProvider = ({ children }) => {
 
   const registerUser = async (name, email, password, phone) => {
     try {
+      const cleanEmail = email ? email.trim().toLowerCase() : '';
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, phone })
+        body: JSON.stringify({ name, email: cleanEmail, password, phone })
       });
 
       const contentType = response.headers.get('content-type');
