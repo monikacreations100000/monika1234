@@ -385,11 +385,7 @@ export const ShopContextProvider = ({ children }) => {
 
         if (contentType && contentType.includes('application/json')) {
           const serverProduct = await response.json();
-          setProducts(prev => {
-            const updated = [serverProduct, ...prev];
-            localStorage.setItem('localProducts', JSON.stringify(updated));
-            return updated;
-          });
+          await fetchProducts();
           return serverProduct;
         }
       } catch (err) {
@@ -442,11 +438,7 @@ export const ShopContextProvider = ({ children }) => {
 
         if (contentType && contentType.includes('application/json')) {
           const serverProduct = await response.json();
-          setProducts(prev => {
-            const updated = prev.map(p => p._id === id ? serverProduct : p);
-            localStorage.setItem('localProducts', JSON.stringify(updated));
-            return updated;
-          });
+          await fetchProducts();
           return serverProduct;
         }
       } catch (err) {
@@ -502,11 +494,7 @@ export const ShopContextProvider = ({ children }) => {
           throw new Error(errorMsg);
         }
 
-        setProducts(prev => {
-          const updated = prev.filter(p => p._id !== id);
-          localStorage.setItem('localProducts', JSON.stringify(updated));
-          return updated;
-        });
+        await fetchProducts();
         return true;
       } catch (err) {
         console.error('API delete product failed:', err.message);
