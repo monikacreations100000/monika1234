@@ -15,6 +15,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const authRoutes = require('./routes/auth');
+const userRoutes = authRoutes;
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const couponRoutes = require('./routes/coupons');
@@ -214,21 +215,13 @@ const ensureDbConnection = async (req, res, next) => {
 app.use(ensureDbConnection);
 
 console.log('Registering API routes:');
-console.log(' - /api/users -> AuthRoutes');
-app.use('/api/users', authRoutes);
-console.log(' - /api/auth -> AuthRoutes');
-app.use('/api/auth', authRoutes);
-console.log(' - /api/admin -> AuthRoutes');
-app.use('/api/admin', authRoutes);
-console.log(' - /api/products -> ProductRoutes');
 app.use('/api/products', productRoutes);
-console.log(' - /api/orders -> OrderRoutes');
-app.use('/api/orders', orderRoutes);
-console.log(' - /api/coupons -> CouponRoutes');
-app.use('/api/coupons', couponRoutes);
-console.log(' - /api/settings -> SettingsRoutes');
 app.use('/api/settings', settingsRoutes);
-console.log(' - /api/upload -> UploadRoutes');
+app.use('/api/orders', orderRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', authRoutes);
+app.use('/api/coupons', couponRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Serve static assets
@@ -252,9 +245,8 @@ app.get('/api/status', (req, res) => {
 // Diagnostic test route
 app.get('/api/test', (req, res) => {
   res.json({
-    message: 'API is working correctly!',
-    env: process.env.NODE_ENV,
-    vercel: !!process.env.VERCEL
+    success: true,
+    message: 'API Working'
   });
 });
 
