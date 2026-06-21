@@ -68,6 +68,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Restore original request URL from Vercel routing headers if rewritten to root
+app.use((req, res, next) => {
+  const matchedPath = req.headers['x-matched-path'] || req.headers['x-forwarded-url'];
+  if (matchedPath) {
+    req.url = matchedPath;
+  }
+  next();
+});
+
 // State flag for mock database fallback
 global.useMockDb = false;
 
@@ -117,6 +126,19 @@ const initializeDatabase = async () => {
       socketTimeoutMS: 45000
     }).then(async (conn) => {
       console.log('✅ MongoDB Connected');
+      try {
+        const Product = require('./models/Product');
+        const User = require('./models/User');
+        const Order = require('./models/Order');
+        const Coupon = require('./models/Coupon');
+        const productCount = await Product.countDocuments();
+        const userCount = await User.countDocuments();
+        const orderCount = await Order.countDocuments();
+        const couponCount = await Coupon.countDocuments();
+        console.log(`📊 Collection Counts -> Products: ${productCount}, Users: ${userCount}, Orders: ${orderCount}, Coupons: ${couponCount}`);
+      } catch (countErr) {
+        console.warn('Could not read collection counts:', countErr.message);
+      }
       global.useMockDb = false;
 
       // Seed initial data if database is empty
@@ -194,6 +216,10 @@ app.use(ensureDbConnection);
 console.log('Registering API routes:');
 console.log(' - /api/users -> AuthRoutes');
 app.use('/api/users', authRoutes);
+console.log(' - /api/auth -> AuthRoutes');
+app.use('/api/auth', authRoutes);
+console.log(' - /api/admin -> AuthRoutes');
+app.use('/api/admin', authRoutes);
 console.log(' - /api/products -> ProductRoutes');
 app.use('/api/products', productRoutes);
 console.log(' - /api/orders -> OrderRoutes');
@@ -237,6 +263,8 @@ app.get('/api/routes', (req, res) => {
   res.json({
     registeredRoutes: [
       '/api/users',
+      '/api/auth',
+      '/api/admin',
       '/api/products',
       '/api/orders',
       '/api/coupons',
