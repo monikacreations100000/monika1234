@@ -3,16 +3,6 @@ const router = express.Router();
 const dbAdapter = require('../data/dbAdapter');
 const { protect, admin } = require('../middleware/authMiddleware');
 
-// Helper to log and respond with error
-const handleError = (res, message, status = 500) => (error) => {
-  console.error(`❌ [PRODUCTS ROUTE ERROR] ${message}:`, error);
-  res.status(status).json({
-    success: false,
-    message: error.message || message,
-    stack: error.stack
-  });
-};
-
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
@@ -25,8 +15,15 @@ router.get('/', async (req, res) => {
       products = products.filter(p => p.category === category);
     }
     res.json(products);
-  } catch (error) {
-    handleError(res, 'Fetch all products failed')(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -42,8 +39,15 @@ router.get('/:id', async (req, res) => {
     } else {
       res.status(404).json({ success: false, message: 'Product not found' });
     }
-  } catch (error) {
-    handleError(res, `Fetch product with ID ${req.params.id} failed`)(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -65,8 +69,15 @@ router.post('/', protect, admin, async (req, res) => {
       description: description || 'Sample description',
     });
     res.status(201).json(createdProduct);
-  } catch (error) {
-    handleError(res, 'Create product failed')(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -94,8 +105,15 @@ router.put('/:id', protect, admin, async (req, res) => {
     } else {
       res.status(404).json({ success: false, message: 'Product not found' });
     }
-  } catch (error) {
-    handleError(res, `Update product with ID ${req.params.id} failed`)(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -110,8 +128,15 @@ router.delete('/:id', protect, admin, async (req, res) => {
     } else {
       res.status(404).json({ success: false, message: 'Product not found' });
     }
-  } catch (error) {
-    handleError(res, `Delete product with ID ${req.params.id} failed`)(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -143,8 +168,15 @@ router.post('/:id/reviews', protect, async (req, res) => {
     } else {
       res.status(404).json({ success: false, message: 'Product not found' });
     }
-  } catch (error) {
-    handleError(res, `Add review for product ${req.params.id} failed`)(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 

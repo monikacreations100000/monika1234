@@ -57,7 +57,8 @@ const getAllProducts = async () => {
     return mockData.mockProducts;
   }
   // mongo
-  return await Product.find({});
+  const products = await Product.find({}).lean();
+  return products || [];
 };
 
 const findProductById = async (id) => {
@@ -66,7 +67,7 @@ const findProductById = async (id) => {
     return mockData.mockProducts.find(p => p._id === id);
   }
   // mongo
-  return await Product.findById(id);
+  return await Product.findById(id).lean();
 };
 
 const createProduct = async (productData) => {
@@ -291,7 +292,7 @@ const getSettings = async (key, defaultValue) => {
     return mockSettings[key] !== undefined ? mockSettings[key] : defaultValue;
   }
   // mongo
-  const setting = await Settings.findOne({ key });
+  const setting = await Settings.findOne({ key }).lean();
   return setting ? setting.value : defaultValue;
 };
 

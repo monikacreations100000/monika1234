@@ -3,16 +3,6 @@ const router = express.Router();
 const dbAdapter = require('../data/dbAdapter');
 const { protect, admin } = require('../middleware/authMiddleware');
 
-// Helper to log and respond with error
-const handleError = (res, message, status = 500) => (error) => {
-  console.error(`❌ [SETTINGS ROUTE ERROR] ${message}:`, error);
-  res.status(status).json({
-    success: false,
-    message: error.message || message,
-    stack: error.stack
-  });
-};
-
 // @desc    Get UPI & QR code settings
 // @route   GET /api/settings/upi
 // @access  Public
@@ -23,8 +13,15 @@ router.get('/upi', async (req, res) => {
       qrCode: process.env.QR_CODE || ''
     });
     res.json(upiSettings);
-  } catch (error) {
-    handleError(res, 'Get UPI settings failed')(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 
@@ -45,8 +42,15 @@ router.put('/upi', protect, admin, async (req, res) => {
     });
     
     res.json(updated);
-  } catch (error) {
-    handleError(res, 'Update UPI settings failed')(error);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      stack: process.env.NODE_ENV !== 'production'
+        ? err.stack
+        : undefined
+    });
   }
 });
 

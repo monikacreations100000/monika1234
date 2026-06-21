@@ -22,6 +22,13 @@ const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
+console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+
+if (!process.env.MONGODB_URI && !process.env.MONGO_URI) {
+  throw new Error("MONGODB_URI environment variable is missing!");
+}
+
 const authRoutes = require('./routes/auth');
 const userRoutes = authRoutes;
 const productRoutes = require('./routes/products');
@@ -124,7 +131,10 @@ const initializeDatabase = async () => {
   }
 
   if (!cachedConnectionPromise) {
-    const rawUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
+    const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    if (!rawUri) {
+      throw new Error("MONGODB_URI environment variable is missing!");
+    }
     const mongoUri = cleanMongoUri(rawUri);
     console.log('Connecting to MongoDB database...');
     console.log('Loaded URI:', mongoUri.replace(/:([^@]+)@/, ':****@'));
@@ -229,6 +239,35 @@ const ensureDbConnection = async (req, res, next) => {
 // Routes
 app.use(ensureDbConnection);
 
+const logRegisteredRoutes = (appInstance) => {
+  console.log('📌 Registered Routes:');
+  try {
+    appInstance._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+        console.log(` - ${Object.keys(middleware.route.methods).join(', ').toUpperCase()} ${middleware.route.path}`);
+      } else if (middleware.name === 'router') {
+        let pathPrefix = middleware.regexp.toString()
+          .replace('/^\\', '')
+          .replace('\\/?(?=\\/|$)/i', '')
+          .replace('\\', '')
+          .replace('?(?=\\/|$)', '');
+        if (pathPrefix.endsWith('/')) {
+          pathPrefix = pathPrefix.slice(0, -1);
+        }
+        
+        middleware.handle.stack.forEach((handler) => {
+          if (handler.route) {
+            const path = handler.route.path === '/' ? '' : handler.route.path;
+            console.log(` - ${Object.keys(handler.route.methods).join(', ').toUpperCase()} ${pathPrefix}${path}`);
+          }
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('Could not log registered routes:', err.message);
+  }
+};
+
 console.log('Registering API routes:');
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingsRoutes);
@@ -238,6 +277,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', authRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/upload', uploadRoutes);
+
+logRegisteredRoutes(app);
 
 // Serve static assets
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
@@ -279,8 +320,19 @@ app.get('/api/routes', (req, res) => {
       '/api/upload',
       '/api/status',
       '/api/test',
-      '/api/routes'
+      '/api/routes',
+      '/api/debug'
     ]
+  });
+});
+
+// Debug endpoint returning current system status
+app.get('/api/debug', (req, res) => {
+  res.json({
+    mongoConnected: mongoose.connection.readyState,
+    dbName: mongoose.connection.name,
+    routesLoaded: true,
+    envLoaded: true
   });
 });
 
@@ -322,12 +374,10 @@ if (!process.env.VERCEL) {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  console.error('🔥 [GLOBAL SERVER ERROR] Stack trace:', err);
-  res.status(statusCode).json({
+  console.error("GLOBAL ERROR:", err);
+  res.status(500).json({
     success: false,
-    message: err.message,
-    stack: err.stack,
+    message: err.message
   });
 });
 
