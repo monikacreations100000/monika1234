@@ -3,6 +3,16 @@ const router = express.Router();
 const dbAdapter = require('../data/dbAdapter');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+// Helper to log and respond with error
+const handleError = (res, message, status = 500) => (error) => {
+  console.error(`❌ [SETTINGS ROUTE ERROR] ${message}:`, error);
+  res.status(status).json({
+    success: false,
+    message: error.message || message,
+    stack: error.stack
+  });
+};
+
 // @desc    Get UPI & QR code settings
 // @route   GET /api/settings/upi
 // @access  Public
@@ -14,7 +24,7 @@ router.get('/upi', async (req, res) => {
     });
     res.json(upiSettings);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, 'Get UPI settings failed')(error);
   }
 });
 
@@ -26,7 +36,7 @@ router.put('/upi', protect, admin, async (req, res) => {
     const { upiId, qrCode } = req.body;
     
     if (!upiId) {
-      return res.status(400).json({ message: 'UPI ID is required' });
+      return res.status(400).json({ success: false, message: 'UPI ID is required' });
     }
 
     const updated = await dbAdapter.updateSettings('upi_settings', {
@@ -36,7 +46,7 @@ router.put('/upi', protect, admin, async (req, res) => {
     
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, 'Update UPI settings failed')(error);
   }
 });
 

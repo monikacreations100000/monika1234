@@ -1,3 +1,11 @@
+process.on('uncaughtException', err => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+
+process.on('unhandledRejection', err => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
 const dns = require('dns');
 try {
   dns.setServers(['8.8.8.8', '8.8.4.4']);
@@ -200,13 +208,20 @@ const ensureDbConnection = async (req, res, next) => {
   if (!req.path.startsWith('/api')) {
     return next();
   }
+  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const currentState = mongoose.connection.readyState;
+  console.log(`🔌 [DATABASE STATE] Connection state is "${states[currentState] || currentState}" (code: ${currentState})`);
+
   try {
     await initializeDatabase();
     next();
   } catch (err) {
+    console.error('❌ Database connection failed during request processing:', err);
     res.status(500).json({
+      success: false,
       message: 'Database connection failed. Please try again later.',
-      error: process.env.NODE_ENV === 'production' ? null : err.message
+      error: err.message,
+      stack: err.stack
     });
   }
 };
@@ -308,9 +323,11 @@ if (!process.env.VERCEL) {
 // Error handling middleware
 app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  console.error('🔥 [GLOBAL SERVER ERROR] Stack trace:', err);
   res.status(statusCode).json({
+    success: false,
     message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    stack: err.stack,
   });
 });
 

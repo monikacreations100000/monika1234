@@ -3,6 +3,16 @@ const router = express.Router();
 const dbAdapter = require('../data/dbAdapter');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+// Helper to log and respond with error
+const handleError = (res, message, status = 500) => (error) => {
+  console.error(`❌ [PRODUCTS ROUTE ERROR] ${message}:`, error);
+  res.status(status).json({
+    success: false,
+    message: error.message || message,
+    stack: error.stack
+  });
+};
+
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
@@ -16,7 +26,7 @@ router.get('/', async (req, res) => {
     }
     res.json(products);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, 'Fetch all products failed')(error);
   }
 });
 
@@ -30,10 +40,10 @@ router.get('/:id', async (req, res) => {
     if (product) {
       res.json(product);
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ success: false, message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, `Fetch product with ID ${req.params.id} failed`)(error);
   }
 });
 
@@ -56,7 +66,7 @@ router.post('/', protect, admin, async (req, res) => {
     });
     res.status(201).json(createdProduct);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, 'Create product failed')(error);
   }
 });
 
@@ -82,10 +92,10 @@ router.put('/:id', protect, admin, async (req, res) => {
       });
       res.json(updatedProduct);
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ success: false, message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, `Update product with ID ${req.params.id} failed`)(error);
   }
 });
 
@@ -96,12 +106,12 @@ router.delete('/:id', protect, admin, async (req, res) => {
   try {
     const success = await dbAdapter.deleteProduct(req.params.id);
     if (success) {
-      res.json({ message: 'Product removed' });
+      res.json({ success: true, message: 'Product removed' });
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ success: false, message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, `Delete product with ID ${req.params.id} failed`)(error);
   }
 });
 
@@ -120,7 +130,7 @@ router.post('/:id/reviews', protect, async (req, res) => {
       );
 
       if (alreadyReviewed) {
-        return res.status(400).json({ message: 'Product already reviewed' });
+        return res.status(400).json({ success: false, message: 'Product already reviewed' });
       }
 
       await dbAdapter.addProductReview(req.params.id, {
@@ -129,12 +139,12 @@ router.post('/:id/reviews', protect, async (req, res) => {
         comment,
         user: req.user._id,
       });
-      res.status(201).json({ message: 'Review added' });
+      res.status(201).json({ success: true, message: 'Review added' });
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ success: false, message: 'Product not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, `Add review for product ${req.params.id} failed`)(error);
   }
 });
 
