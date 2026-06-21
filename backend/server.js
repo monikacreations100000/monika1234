@@ -48,7 +48,10 @@ app.use(cors({
       origin.startsWith('http://172.')
     );
 
-    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork) {
+    // Allow any Vercel deployments (including preview links)
+    const isVercelSubdomain = origin && origin.endsWith('.vercel.app');
+
+    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork || isVercelSubdomain) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -58,6 +61,12 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 image uploads
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl || req.path} (IP: ${req.ip})`);
+  next();
+});
 
 // State flag for mock database fallback
 global.useMockDb = false;
@@ -181,11 +190,19 @@ const ensureDbConnection = async (req, res, next) => {
 
 // Routes
 app.use(ensureDbConnection);
+
+console.log('Registering API routes:');
+console.log(' - /api/users -> AuthRoutes');
 app.use('/api/users', authRoutes);
+console.log(' - /api/products -> ProductRoutes');
 app.use('/api/products', productRoutes);
+console.log(' - /api/orders -> OrderRoutes');
 app.use('/api/orders', orderRoutes);
+console.log(' - /api/coupons -> CouponRoutes');
 app.use('/api/coupons', couponRoutes);
+console.log(' - /api/settings -> SettingsRoutes');
 app.use('/api/settings', settingsRoutes);
+console.log(' - /api/upload -> UploadRoutes');
 app.use('/api/upload', uploadRoutes);
 
 // Serve static assets
@@ -203,6 +220,32 @@ app.get('/api/status', (req, res) => {
     brand: "Monika's Creation API",
     database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
     timestamp: new Date()
+  });
+});
+
+// Diagnostic test route
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'API is working correctly!',
+    env: process.env.NODE_ENV,
+    vercel: !!process.env.VERCEL
+  });
+});
+
+// Registered routes list route
+app.get('/api/routes', (req, res) => {
+  res.json({
+    registeredRoutes: [
+      '/api/users',
+      '/api/products',
+      '/api/orders',
+      '/api/coupons',
+      '/api/settings',
+      '/api/upload',
+      '/api/status',
+      '/api/test',
+      '/api/routes'
+    ]
   });
 });
 

@@ -22,6 +22,7 @@ router.post('/login', async (req, res) => {
     const user = await dbAdapter.findUserByEmail(emailNormalized);
 
     if (user && (await bcrypt.compare(password, user.password))) {
+      console.log(`[AUTH SUCCESS] User "${emailNormalized}" logged in successfully (Admin: ${user.isAdmin || false}) (IP: ${req.ip}).`);
       res.json({
         _id: user._id,
         name: user.name,
@@ -30,6 +31,7 @@ router.post('/login', async (req, res) => {
         token: generateToken(user._id),
       });
     } else {
+      console.warn(`[AUTH FAIL] Login attempt failed for user "${emailNormalized}" (Invalid email or password) (IP: ${req.ip}).`);
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {

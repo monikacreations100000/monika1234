@@ -864,6 +864,7 @@ export const ShopContextProvider = ({ children }) => {
   return (
     <ShopContext.Provider
       value={{
+        API_URL,
         products: products.filter(p => !deletedProductIds.includes(p._id)),
         loading,
         error,

@@ -4,7 +4,7 @@ import { ShopContext } from '../context/ShopContext';
 import { ShoppingBag, Search, User, Sun, Moon, Menu, X, LogOut, Settings, Bell, Info, AlertTriangle, Tag } from 'lucide-react';
 
 export default function Navbar() {
-  const { getCartCount, userInfo, logoutUser, theme, toggleTheme } = useContext(ShopContext);
+  const { getCartCount, userInfo, logoutUser, theme, toggleTheme, API_URL } = useContext(ShopContext);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -28,7 +28,7 @@ export default function Navbar() {
         if (userInfo.isAdmin) {
           // Admin notifications
           // 1. Fetch products
-          const prodRes = await fetch(`/api/products`);
+          const prodRes = await fetch(`${API_URL}/products`);
           if (prodRes.ok) {
             const prods = await prodRes.json();
             prods.forEach(p => {
@@ -45,7 +45,7 @@ export default function Navbar() {
           }
           
           // 2. Fetch orders
-          const ordRes = await fetch(`/api/orders`, {
+          const ordRes = await fetch(`${API_URL}/orders`, {
             headers: { 'Authorization': `Bearer ${userInfo.token}` }
           });
           if (ordRes.ok) {
@@ -64,7 +64,7 @@ export default function Navbar() {
         } else {
           // Customer notifications
           // 1. Fetch my orders
-          const ordRes = await fetch(`/api/orders/myorders`, {
+          const ordRes = await fetch(`${API_URL}/orders/myorders`, {
             headers: { 'Authorization': `Bearer ${userInfo.token}` }
           });
           if (ordRes.ok) {

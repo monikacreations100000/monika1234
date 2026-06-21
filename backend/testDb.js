@@ -35,7 +35,7 @@ const cleanMongoUri = (uri) => {
 };
 
 const test = async () => {
-  const rawUri = process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
+  const rawUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
   const mongoUri = cleanMongoUri(rawUri);
   console.log('Raw URI from env:', rawUri.replace(/:([^@]+)@/, ':****@'));
   console.log('Cleaned URI to connect:', mongoUri.replace(/:([^@]+)@/, ':****@'));
