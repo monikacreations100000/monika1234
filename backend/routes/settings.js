@@ -9,8 +9,8 @@ const { protect, admin } = require('../middleware/authMiddleware');
 router.get('/upi', async (req, res) => {
   try {
     const upiSettings = await dbAdapter.getSettings('upi_settings', {
-      upiId: 'sethswayam21@okaxis',
-      qrCode: ''
+      upiId: process.env.UPI_ID || 'sethswayam21@okaxis',
+      qrCode: process.env.QR_CODE || ''
     });
     res.json(upiSettings);
   } catch (error) {
