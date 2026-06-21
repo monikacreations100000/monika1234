@@ -1,5 +1,12 @@
 const dns = require('dns');
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  console.warn('Failed to set Google DNS servers:', e.message);
+}
 dns.setDefaultResultOrder('ipv4first');
+
+// Nodemon trigger change to reload new env
 
 const express = require('express');
 const cors = require('cors');
@@ -58,66 +65,122 @@ global.useMockDb = false;
 // Connect to Database (MongoDB or fallback to Mock Database)
 const dbAdapter = require('./data/dbAdapter');
 
-const initializeDatabase = async () => {
-  // Connect to MongoDB
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
-  console.log('Connecting to MongoDB database...');
-  console.log('Loaded URI:', mongoUri.replace(/:([^@]+)@/, ':****@'));
-  
-  try {
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 3000, // Timeout after 3 seconds
-      family: 4 // Force IPv4 to resolve Atlas DNS issues
-    });
-    console.log('Successfully connected to MongoDB!');
-    global.useMockDb = false;
-    
-    // Seed initial data if database is empty
-    await seedData();
+let cachedConnectionPromise = null;
 
-    // Ensure owner account always exists with admin rights in MongoDB
-    try {
-      const bcrypt = require('bcryptjs');
-      const ownerEmail = 'monikacreations100000@gmail.com';
-      
-      const ownerExists = await dbAdapter.findUserByEmail(ownerEmail);
-      if (!ownerExists) {
-        console.log('Owner account not found in MongoDB. Seeding owner account...');
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('8935086', salt);
-        await dbAdapter.createUser({
-          name: "Monika's Creation Owner",
-          email: ownerEmail,
-          password: hashedPassword,
-          phone: '0000000000',
-          isAdmin: true
-        });
-        console.log('Owner account seeded in MongoDB successfully.');
-      } else {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('8935086', salt);
-        await dbAdapter.updateUser(ownerExists._id, {
-          isAdmin: true,
-          password: hashedPassword
-        });
-        console.log('Owner account verified in MongoDB.');
-      }
-    } catch (err) {
-      console.error('Error ensuring owner admin account in MongoDB:', err.message);
+const cleanMongoUri = (uri) => {
+  if (!uri) return uri;
+  try {
+    let cleaned = uri.trim();
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
+        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+      cleaned = cleaned.slice(1, -1).trim();
     }
+    const match = cleaned.match(/^(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@.+)$/);
+    if (match) {
+      let password = match[2];
+      password = password.replace(/\s+/g, '');
+      if (password.startsWith('<') && password.endsWith('>')) {
+        password = password.slice(1, -1);
+      }
+      return `${match[1]}${password}${match[3]}`;
+    }
+    return cleaned;
+  } catch (e) {
+    console.error('Error cleaning MongoDB URI:', e.message);
+  }
+  return uri;
+};
+
+const initializeDatabase = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return mongoose.connection;
+  }
+
+  if (!cachedConnectionPromise) {
+    const rawUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://monikacreations100000_db_user:893508@ac-yairita-shard-00-00.ofrkida.mongodb.net:27017,ac-yairita-shard-00-01.ofrkida.mongodb.net:27017,ac-yairita-shard-00-02.ofrkida.mongodb.net:27017/monikas_creation?ssl=true&authSource=admin';
+    const mongoUri = cleanMongoUri(rawUri);
+    console.log('Connecting to MongoDB database...');
+    console.log('Loaded URI:', mongoUri.replace(/:([^@]+)@/, ':****@'));
+
+    cachedConnectionPromise = mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000, // 10 seconds timeout for serverless/Vercel functions
+      family: 4, // Force IPv4 to resolve Atlas DNS issues
+      socketTimeoutMS: 45000
+    }).then(async (conn) => {
+      console.log('✅ MongoDB Connected');
+      global.useMockDb = false;
+
+      // Seed initial data if database is empty
+      await seedData();
+
+      // Ensure owner account always exists with admin rights in MongoDB
+      try {
+        const bcrypt = require('bcryptjs');
+        const ownerEmail = 'monikacreations100000@gmail.com';
+        
+        const ownerExists = await dbAdapter.findUserByEmail(ownerEmail);
+        if (!ownerExists) {
+          console.log('Owner account not found in MongoDB. Seeding owner account...');
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash('8935086', salt);
+          await dbAdapter.createUser({
+            name: "Monika's Creation Owner",
+            email: ownerEmail,
+            password: hashedPassword,
+            phone: '0000000000',
+            isAdmin: true
+          });
+          console.log('Owner account seeded in MongoDB successfully.');
+        } else {
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash('8935086', salt);
+          await dbAdapter.updateUser(ownerExists._id, {
+            isAdmin: true,
+            password: hashedPassword
+          });
+          console.log('Owner account verified in MongoDB.');
+        }
+      } catch (err) {
+        console.error('Error ensuring owner admin account in MongoDB:', err.message);
+      }
+      return conn;
+    }).catch((err) => {
+      cachedConnectionPromise = null; // Reset connection promise on failure to retry next time
+      console.error("❌ MongoDB Connection Error:");
+      console.error(err);
+      if (!process.env.VERCEL) {
+        process.exit(1); // Exit process locally, but not on Vercel
+      }
+      throw err;
+    });
+  }
+
+  return cachedConnectionPromise;
+};
+
+// Start connecting to database
+initializeDatabase().catch((err) => {
+  console.error('Initial database connection attempt failed:', err.message);
+});
+
+// Middleware to ensure DB connection is ready on API requests
+const ensureDbConnection = async (req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    return next();
+  }
+  try {
+    await initializeDatabase();
+    next();
   } catch (err) {
-    console.error('===============================================================');
-    console.error('FATAL ERROR: Could not connect to MongoDB database.');
-    console.error('Reason:', err.message);
-    console.error('FALLING BACK: Mock In-Memory Database is DISABLED.');
-    console.error('===============================================================');
-    process.exit(1); // Exit process to fail loudly
+    res.status(500).json({
+      message: 'Database connection failed. Please try again later.',
+      error: process.env.NODE_ENV === 'production' ? null : err.message
+    });
   }
 };
 
-initializeDatabase();
-
 // Routes
+app.use(ensureDbConnection);
 app.use('/api/users', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
