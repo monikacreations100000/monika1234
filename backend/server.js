@@ -269,26 +269,41 @@ app.get('/api/routes', (req, res) => {
   });
 });
 
-// Serve frontend index.html for any other non-API route
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  const indexPath = path.join(frontendDistPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      if (req.path === '/') {
-        return res.json({
-          status: 'Online',
-          brand: "Monika's Creation API (Frontend not built yet)",
-          database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
-          timestamp: new Date()
-        });
-      }
-      res.status(404).send('Frontend static assets are not built yet. Run "npm run build-frontend" to build the React application.');
-    }
+// Root path handler
+app.get('/', (req, res) => {
+  res.json({
+    status: 'Online',
+    brand: "Monika's Creation API",
+    database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
+    timestamp: new Date()
   });
 });
+
+// Serve frontend index.html for any other non-API route (fallback for local full-stack dev)
+if (!process.env.VERCEL) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    const indexPath = path.join(frontendDistPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        res.status(404).send('Frontend static assets are not built yet. Run "npm run build-frontend" to build the React application.');
+      }
+    });
+  });
+} else {
+  // On Vercel, return 404 for unmatched non-API routes to avoid serving HTML
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.status(404).json({
+      success: false,
+      message: `Path ${req.url} not found on this API server.`
+    });
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

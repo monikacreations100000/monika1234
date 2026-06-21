@@ -1,11 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
+import BASE_API_URL from '../config/api';
 
 export const ShopContext = createContext(null);
 
 const localMockProducts = [];
 
 export const ShopContextProvider = ({ children }) => {
-  const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
+  const API_URL = (BASE_API_URL || '').replace(/\/$/, '') + '/api';
 
   // State Declarations
   const [products, setProducts] = useState([]);
