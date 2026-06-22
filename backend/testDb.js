@@ -14,6 +14,12 @@ const cleanMongoUri = (uri) => {
   if (!uri) return uri;
   try {
     let cleaned = uri.trim();
+    if (cleaned.startsWith('MONGODB_URI=')) {
+      cleaned = cleaned.substring('MONGODB_URI='.length).trim();
+    }
+    if (cleaned.startsWith('MONGO_URI=')) {
+      cleaned = cleaned.substring('MONGO_URI='.length).trim();
+    }
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
       cleaned = cleaned.slice(1, -1).trim();

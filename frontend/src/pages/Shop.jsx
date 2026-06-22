@@ -88,7 +88,11 @@ export default function Shop() {
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-  const categoriesList = ['Banarasi Fabric Works', 'Amritsari Fabric Works', 'Ladies Purses'];
+  // Get unique categories present in the products catalog dynamically
+  const categoriesList = React.useMemo(() => {
+    const list = products.map(p => p.category).filter(Boolean);
+    return [...new Set(list)];
+  }, [products]);
 
   return (
     <div className="shop-page-container container animate-fade">

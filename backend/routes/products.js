@@ -89,27 +89,35 @@ router.post('/', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
   try {
-    const { name, price, description, image, images, category, fabric, stock } = req.body;
+    const productId = req.params.id;
+    console.log(`[PRODUCT UPDATE REQUEST] ID: ${productId}`);
+    console.log("Request Body:", JSON.stringify(req.body, null, 2));
 
-    const product = await dbAdapter.findProductById(req.params.id);
+    const { name, price, description, image, images, category, fabric, stock } = req.body;
+    const product = await dbAdapter.findProductById(productId);
 
     if (product) {
-      const updatedProduct = await dbAdapter.updateProduct(req.params.id, {
+      const updateData = {
         name: name ?? product.name,
-        price: price ?? product.price,
+        price: price !== undefined ? Number(price) : product.price,
         description: description ?? product.description,
         image: image ?? product.image,
         images: images ?? product.images,
         category: category ?? product.category,
         fabric: fabric ?? product.fabric,
-        stock: stock ?? product.stock,
-      });
+        stock: stock !== undefined ? Number(stock) : product.stock,
+      };
+
+      const updatedProduct = await dbAdapter.updateProduct(productId, updateData);
+      
+      console.log(`[PRODUCT UPDATE SUCCESS] MongoDB updated result:`, JSON.stringify(updatedProduct, null, 2));
       res.json(updatedProduct);
     } else {
+      console.warn(`[PRODUCT UPDATE FAIL] Product not found. ID: ${productId}`);
       res.status(404).json({ success: false, message: 'Product not found' });
     }
   } catch (err) {
-    console.error(err);
+    console.error(`[PRODUCT UPDATE ERROR] Error during update processing:`, err);
     return res.status(500).json({
       success: false,
       error: err.message,

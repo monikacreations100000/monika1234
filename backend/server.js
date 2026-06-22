@@ -94,6 +94,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Disable caching for all API responses
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
 // Restore original request URL from Vercel routing headers if rewritten to root
 app.use((req, res, next) => {
   const matchedPath = req.headers['x-matched-path'] || req.headers['x-forwarded-url'];
@@ -113,6 +119,13 @@ const cleanMongoUri = (uri) => {
   if (!uri) return uri;
   try {
     let cleaned = uri.trim();
+    // Strip redundant env var name prefixes if present
+    if (cleaned.startsWith('MONGODB_URI=')) {
+      cleaned = cleaned.substring('MONGODB_URI='.length).trim();
+    }
+    if (cleaned.startsWith('MONGO_URI=')) {
+      cleaned = cleaned.substring('MONGO_URI='.length).trim();
+    }
     if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
         (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
       cleaned = cleaned.slice(1, -1).trim();

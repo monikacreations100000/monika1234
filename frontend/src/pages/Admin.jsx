@@ -65,7 +65,7 @@ export default function Admin() {
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
   const [additionalImages, setAdditionalImages] = useState([]);
-  const [category, setCategory] = useState('Banarasi Fabric Works');
+  const [category, setCategory] = useState('');
   const [fabric, setFabric] = useState('Cotton');
   const [stock, setStock] = useState('10');
   
@@ -295,7 +295,7 @@ export default function Admin() {
     setDescription('');
     setImage('');
     setAdditionalImages([]);
-    setCategory('Banarasi Fabric Works');
+    setCategory('');
     setFabric('Cotton');
     setStock('10');
   };
@@ -340,21 +340,15 @@ export default function Admin() {
 
   // Category sales breakdown
   const categorySales = React.useMemo(() => {
-    const breakdown = {
-      'Banarasi Fabric Works': 0,
-      'Amritsari Fabric Works': 0,
-      'Ladies Purses': 0,
-      'other items': 0
-    };
+    const breakdown = {};
     orders.forEach(o => {
       o.orderItems.forEach(item => {
         const matchedProd = products.find(p => p._id === item.product);
-        const category = matchedProd ? matchedProd.category : 'Banarasi Fabric Works';
-        if (breakdown[category] !== undefined) {
-          breakdown[category] += item.price * item.qty;
-        } else {
-          breakdown['other items'] += item.price * item.qty;
+        const category = matchedProd && matchedProd.category ? matchedProd.category : 'Other';
+        if (breakdown[category] === undefined) {
+          breakdown[category] = 0;
         }
+        breakdown[category] += item.price * item.qty;
       });
     });
     return breakdown;
@@ -696,15 +690,14 @@ export default function Admin() {
               <div className="form-grid-2">
                 <div className="admin-form-group">
                   <label className="auth-label">Category</label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="e.g. Banarasi Fabric Works, Ladies Purses"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="admin-select"
-                  >
-                    <option value="Banarasi Fabric Works">Banarasi Fabric Works</option>
-                    <option value="Amritsari Fabric Works">Amritsari Fabric Works</option>
-                    <option value="Ladies Purses">Ladies Purses</option>
-                  </select>
+                    className="form-input"
+                    required
+                  />
                 </div>
                 <div className="admin-form-group">
                   <label className="auth-label">Fabric / Materials</label>
