@@ -147,7 +147,10 @@ export const ShopContextProvider = ({ children }) => {
         throw new Error('API server unreachable');
       }
       const data = await response.json();
-      setProducts(data);
+      const productsList = (data && data.success && Array.isArray(data.products))
+        ? data.products
+        : (Array.isArray(data) ? data : []);
+      setProducts(productsList);
       setBackendStatus({ online: true, type: 'Live Database' });
       setError(null);
     } catch (err) {

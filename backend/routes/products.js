@@ -14,7 +14,10 @@ router.get('/', async (req, res) => {
     if (category) {
       products = products.filter(p => p.category === category);
     }
-    res.json(products);
+    res.json({
+      success: true,
+      products: products || []
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({

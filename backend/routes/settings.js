@@ -14,8 +14,8 @@ router.get('/upi', async (req, res) => {
     };
     const upiSettings = await dbAdapter.getSettings('upi_settings', defaultSettings);
     res.json({
-      upiId: (upiSettings && upiSettings.upiId) ? upiSettings.upiId : "",
-      qrCode: (upiSettings && upiSettings.qrCode) ? upiSettings.qrCode : ""
+      upiId: (upiSettings && upiSettings.upiId) ? upiSettings.upiId : (process.env.UPI_ID || ""),
+      qrCode: (upiSettings && upiSettings.qrCode) ? upiSettings.qrCode : (process.env.QR_CODE || "")
     });
   } catch (err) {
     console.error(err);

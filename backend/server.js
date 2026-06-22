@@ -21,6 +21,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const dbAdapter = require('./data/dbAdapter');
 
 console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
 console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
@@ -97,8 +98,6 @@ app.use((req, res, next) => {
 global.useMockDb = false;
 
 // Connect to Database (MongoDB or fallback to Mock Database)
-const dbAdapter = require('./data/dbAdapter');
-
 let cachedConnectionPromise = null;
 
 const cleanMongoUri = (uri) => {
@@ -198,9 +197,7 @@ const initializeDatabase = async () => {
       cachedConnectionPromise = null; // Reset connection promise on failure to retry next time
       console.error("❌ MongoDB Connection Error:");
       console.error(err);
-      if (!process.env.VERCEL) {
-        process.exit(1); // Exit process locally, but not on Vercel
-      }
+      global.useMockDb = true;
       throw err;
     });
   }
@@ -210,7 +207,8 @@ const initializeDatabase = async () => {
 
 // Start connecting to database
 initializeDatabase().catch((err) => {
-  console.error('Initial database connection attempt failed:', err.message);
+  console.error('Initial database connection attempt failed. Enabling Mock Database Fallback:', err.message);
+  global.useMockDb = true;
 });
 
 // Middleware to ensure DB connection is ready on API requests
@@ -224,15 +222,12 @@ const ensureDbConnection = async (req, res, next) => {
 
   try {
     await initializeDatabase();
+    global.useMockDb = false;
     next();
   } catch (err) {
-    console.error('❌ Database connection failed during request processing:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Database connection failed. Please try again later.',
-      error: err.message,
-      stack: err.stack
-    });
+    console.error('⚠️ MongoDB connection failed. Activating Safe Fallback Mode (Mock Database):', err.message);
+    global.useMockDb = true;
+    next(); // Proceed to route using mock database instead of returning 500
   }
 };
 
@@ -321,19 +316,37 @@ app.get('/api/routes', (req, res) => {
       '/api/status',
       '/api/test',
       '/api/routes',
-      '/api/debug'
+      '/api/debug',
+      '/api/health'
     ]
   });
 });
 
-// Debug endpoint returning current system status
-app.get('/api/debug', (req, res) => {
+// Health status endpoint
+app.get('/api/health', (req, res) => {
   res.json({
-    mongoConnected: mongoose.connection.readyState,
-    dbName: mongoose.connection.name,
-    routesLoaded: true,
-    envLoaded: true
+    status: "ok",
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    environment: process.env.NODE_ENV || "production"
   });
+});
+
+// Debug endpoint returning current system status details
+app.get('/api/debug', async (req, res) => {
+  try {
+    const products = await dbAdapter.getAllProducts();
+    res.json({
+      mongoConnected: mongoose.connection.readyState === 1,
+      useMockDb: !!global.useMockDb,
+      productsCount: products ? products.length : 0
+    });
+  } catch (err) {
+    res.json({
+      mongoConnected: mongoose.connection.readyState === 1,
+      useMockDb: !!global.useMockDb,
+      productsCount: 0
+    });
+  }
 });
 
 // Root path handler

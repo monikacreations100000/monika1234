@@ -31,7 +31,10 @@ export default function Navbar() {
           const prodRes = await fetch(`${API_URL}/products`);
           if (prodRes.ok) {
             const prods = await prodRes.json();
-            prods.forEach(p => {
+            const productsList = (prods && prods.success && Array.isArray(prods.products))
+              ? prods.products
+              : (Array.isArray(prods) ? prods : []);
+            productsList.forEach(p => {
               if (p.stock <= 3) {
                 list.push({
                   id: `stock-${p._id}`,

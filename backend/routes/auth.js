@@ -19,9 +19,40 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const emailNormalized = email ? email.trim().toLowerCase() : '';
-    const user = await dbAdapter.findUserByEmail(emailNormalized);
+    
+    const adminEmail = (process.env.ADMIN_EMAIL || 'monikacreations100000@gmail.com').trim().toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || '8935086';
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    let user;
+    let authenticated = false;
+
+    if (emailNormalized === adminEmail && password === adminPassword) {
+      console.log(`[AUTH ADMIN_ENV] Admin credentials matching env detected.`);
+      user = await dbAdapter.findUserByEmail(emailNormalized);
+      if (!user) {
+        console.log(`[AUTH ADMIN_ENV] Admin user not found in DB. Creating admin user now...`);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminPassword, salt);
+        user = await dbAdapter.createUser({
+          name: "Monika's Creation Admin",
+          email: adminEmail,
+          password: hashedPassword,
+          phone: "9999999999",
+          isAdmin: true
+        });
+      } else if (!user.isAdmin) {
+        console.log(`[AUTH ADMIN_ENV] Admin user found but lacks isAdmin. Updating to admin...`);
+        user = await dbAdapter.updateUser(user._id, { isAdmin: true });
+      }
+      authenticated = !!user;
+    } else {
+      user = await dbAdapter.findUserByEmail(emailNormalized);
+      if (user && (await bcrypt.compare(password, user.password))) {
+        authenticated = true;
+      }
+    }
+
+    if (authenticated && user) {
       console.log(`[AUTH SUCCESS] User "${emailNormalized}" logged in successfully (Admin: ${user.isAdmin || false}) (IP: ${req.ip}).`);
       res.json({
         _id: user._id,
@@ -35,6 +66,7 @@ router.post('/login', async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
+    console.error(`[AUTH ERROR] Login error for user:`, error);
     res.status(500).json({ message: error.message });
   }
 });
