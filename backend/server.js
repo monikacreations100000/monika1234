@@ -43,8 +43,9 @@ const app = express();
 
 // CORS: allow Vite dev (port 3000/5173), production origins, and Vercel domains
 const allowedOrigins = [
-  'https://monikacreations.online',
   'https://www.monikacreations.online',
+  'https://monikacreations.online',
+  'https://monika1234-rho.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
   process.env.FRONTEND_URL || ''
@@ -52,7 +53,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    console.log("Request Origin:", origin);
+    console.log('Origin:', origin);
     
     // Allow requests with no origin (like mobile apps, curl, or server-to-server)
     if (!origin) {
