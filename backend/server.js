@@ -357,16 +357,21 @@ app.get('/api/health', (req, res) => {
 app.get('/api/debug', async (req, res) => {
   try {
     const products = await dbAdapter.getAllProducts();
+    const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
+    const maskedUri = rawUri.replace(/:([^@]+)@/, ':****@');
     res.json({
       mongoConnected: mongoose.connection.readyState === 1,
       useMockDb: !!global.useMockDb,
-      productsCount: products ? products.length : 0
+      productsCount: products ? products.length : 0,
+      databaseName: mongoose.connection.db ? mongoose.connection.db.databaseName : 'none',
+      uriUsed: maskedUri
     });
   } catch (err) {
     res.json({
       mongoConnected: mongoose.connection.readyState === 1,
       useMockDb: !!global.useMockDb,
-      productsCount: 0
+      productsCount: 0,
+      error: err.message
     });
   }
 });
