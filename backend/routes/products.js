@@ -87,8 +87,20 @@ router.post('/', protect, admin, async (req, res) => {
   } catch (err) {
     console.error('Error in POST /api/products:', err);
     console.error('Stack Trace:', err.stack);
+    
+    // If it's a Mongoose validation error, return a 400 status code
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Product validation failed',
+        error: messages.join(', ')
+      });
+    }
+
     return res.status(500).json({
       success: false,
+      message: 'Server error while creating product',
       error: err.message,
       stack: process.env.NODE_ENV !== 'production'
         ? err.stack
@@ -131,8 +143,20 @@ router.put('/:id', protect, admin, async (req, res) => {
     }
   } catch (err) {
     console.error(`[PRODUCT UPDATE ERROR] Error during update processing:`, err);
+    
+    // If it's a Mongoose validation error, return a 400 status code
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Product validation failed on update',
+        error: messages.join(', ')
+      });
+    }
+
     return res.status(500).json({
       success: false,
+      message: 'Server error while updating product',
       error: err.message,
       stack: process.env.NODE_ENV !== 'production'
         ? err.stack

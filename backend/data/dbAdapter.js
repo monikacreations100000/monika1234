@@ -78,7 +78,7 @@ const createProduct = async (productData) => {
     return await Product.create(productData);
   } catch (err) {
     logQueryError('createProduct', err);
-    return null;
+    throw err;
   }
 };
 
@@ -87,7 +87,7 @@ const updateProduct = async (id, productData) => {
     return await Product.findByIdAndUpdate(id, productData, { new: true });
   } catch (err) {
     logQueryError('updateProduct', err);
-    return null;
+    throw err;
   }
 };
 
@@ -97,7 +97,7 @@ const deleteProduct = async (id) => {
     return !!res;
   } catch (err) {
     logQueryError('deleteProduct', err);
-    return false;
+    throw err;
   }
 };
 

@@ -33,8 +33,7 @@ const productSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: true,
-    enum: ['Banarasi Fabric Works', 'Amritsari Fabric Works', 'Ladies Purses']
+    required: true
   },
   fabric: {
     type: String,
