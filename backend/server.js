@@ -41,41 +41,49 @@ const seedData = require('./data/seed');
 
 const app = express();
 
-// CORS: allow Vite dev (port 3000/3001/5173) and production origin
+// CORS: allow Vite dev (port 3000/5173), production origins, and Vercel domains
 const allowedOrigins = [
+  'https://monikacreations.online',
+  'https://www.monikacreations.online',
   'http://localhost:3000',
-  'http://localhost:3001',
   'http://localhost:5173',
   process.env.FRONTEND_URL || ''
-].filter(Boolean);
+].map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // In development mode, allow any origin to access the server
-    if (process.env.NODE_ENV !== 'production') {
+    console.log("Request Origin:", origin);
+    
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) {
       return callback(null, true);
     }
 
-    // In production, allow requests with no origin, allowed domains, or local network IPs (for testing)
-    const isLocalNetwork = origin && (
+    const isLocalNetwork = 
       origin.startsWith('http://localhost') ||
       origin.startsWith('http://127.0.0.1') ||
       origin.startsWith('http://192.168.') ||
       origin.startsWith('http://10.') ||
-      origin.startsWith('http://172.')
-    );
+      origin.startsWith('http://172.');
 
-    // Allow any Vercel deployments (including preview links)
-    const isVercelSubdomain = origin && origin.endsWith('.vercel.app');
+    // Allow Vercel preview deployments
+    const isVercelSubdomain = origin.endsWith('.vercel.app');
 
-    if (!origin || allowedOrigins.includes(origin) || isLocalNetwork || isVercelSubdomain) {
+    if (allowedOrigins.includes(origin) || isLocalNetwork || isVercelSubdomain) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // Return false instead of throwing Error to prevent global 500 crash responses
+      callback(null, false);
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
+// Explicitly handle OPTIONS preflight requests for all endpoints
+app.options('*', cors());
+
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 image uploads
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
