@@ -2,7 +2,6 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { ShopContext } from '../context/ShopContext';
 import { Search, SlidersHorizontal } from 'lucide-react';
-
 export default function Shop() {
   const { products, addToCart, fetchProducts } = useContext(ShopContext);
   const location = useLocation();

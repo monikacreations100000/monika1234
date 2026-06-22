@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const dbAdapter = require('../data/dbAdapter');
 const { protect, admin } = require('../middleware/authMiddleware');
-const mockData = require('../data/mockData');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'monikascreationsecret', {

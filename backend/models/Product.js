@@ -55,7 +55,15 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
-  reviews: [reviewSchema]
+  reviews: [reviewSchema],
+  isPublished: {
+    type: Boolean,
+    default: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
 }, {
   timestamps: true
 });

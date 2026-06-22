@@ -1,49 +1,11 @@
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Coupon = require('../models/Coupon');
-const mockData = require('./mockData');
 const dbAdapter = require('./dbAdapter');
-
 const seedData = async () => {
   try {
     // Seed default coupons
     await seedCoupons();
-    
-    // Clean up mock products from database if present
-    if (global.useMockDb === false) {
-      try {
-        // Convert to string search or ignore if casting fails
-        const deleteResult = await Product.deleteMany({ _id: { $regex: /^prod_/ } });
-        if (deleteResult.deletedCount > 0) {
-          console.log(`Cleaned up ${deleteResult.deletedCount} mock products from database.`);
-        }
-      } catch (e) {
-        // Ignore cast errors on ObjectId
-      }
-
-      // Seed default products if database is empty
-      const productCount = await Product.countDocuments();
-      if (productCount === 0) {
-        console.log('MongoDB Product collection is empty. Seeding default products...');
-        const productsToSeed = mockData.mockProducts.map(p => {
-          // Clone the product and omit the _id field so MongoDB auto-generates a standard ObjectId
-          const { _id, ...rest } = p;
-          
-          // Also strip mock IDs from sub-documents like reviews so MongoDB can auto-generate ObjectIds for them
-          if (rest.reviews && Array.isArray(rest.reviews)) {
-            rest.reviews = rest.reviews.map(r => {
-              const { _id, ...revRest } = r;
-              return revRest;
-            });
-          }
-          
-          return rest;
-        });
-        await Product.insertMany(productsToSeed);
-        console.log(`Successfully seeded ${productsToSeed.length} default products into MongoDB!`);
-      }
-    }
-    
     console.log('Database Seeding Completed Successfully!');
   } catch (error) {
     console.error('Error seeding database:', error.message);

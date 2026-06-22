@@ -109,10 +109,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// State flag for mock database fallback
-global.useMockDb = false;
-
-// Connect to Database (MongoDB or fallback to Mock Database)
+// Connect to Database
 let cachedConnectionPromise = null;
 
 const cleanMongoUri = (uri) => {
@@ -179,7 +176,6 @@ const initializeDatabase = async () => {
       } catch (countErr) {
         console.warn('Could not read collection counts:', countErr.message);
       }
-      global.useMockDb = false;
 
       // Seed initial data if database is empty
       await seedData();
@@ -219,7 +215,6 @@ const initializeDatabase = async () => {
       cachedConnectionPromise = null; // Reset connection promise on failure to retry next time
       console.error("❌ MongoDB Connection Error:");
       console.error(err);
-      global.useMockDb = true;
       throw err;
     });
   }
@@ -229,8 +224,7 @@ const initializeDatabase = async () => {
 
 // Start connecting to database
 initializeDatabase().catch((err) => {
-  console.error('Initial database connection attempt failed. Enabling Mock Database Fallback:', err.message);
-  global.useMockDb = true;
+  console.error('Initial database connection attempt failed:', err.message);
 });
 
 // Middleware to ensure DB connection is ready on API requests
@@ -244,12 +238,10 @@ const ensureDbConnection = async (req, res, next) => {
 
   try {
     await initializeDatabase();
-    global.useMockDb = false;
     next();
   } catch (err) {
-    console.error('⚠️ MongoDB connection failed. Activating Safe Fallback Mode (Mock Database):', err.message);
-    global.useMockDb = true;
-    next(); // Proceed to route using mock database instead of returning 500
+    console.error('⚠️ MongoDB connection failed:', err.message);
+    res.status(500).json({ success: false, message: 'Database connection failed. Please retry later.' });
   }
 };
 
@@ -310,7 +302,7 @@ app.get('/api/status', (req, res) => {
   res.json({
     status: 'Online',
     brand: "Monika's Creation API",
-    database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
+    database: 'MongoDB Atlas/Local',
     timestamp: new Date()
   });
 });
@@ -361,7 +353,6 @@ app.get('/api/debug', async (req, res) => {
     const maskedUri = rawUri.replace(/:([^@]+)@/, ':****@');
     res.json({
       mongoConnected: mongoose.connection.readyState === 1,
-      useMockDb: !!global.useMockDb,
       productsCount: products ? products.length : 0,
       databaseName: mongoose.connection.db ? mongoose.connection.db.databaseName : 'none',
       uriUsed: maskedUri
@@ -369,7 +360,6 @@ app.get('/api/debug', async (req, res) => {
   } catch (err) {
     res.json({
       mongoConnected: mongoose.connection.readyState === 1,
-      useMockDb: !!global.useMockDb,
       productsCount: 0,
       error: err.message
     });
@@ -381,7 +371,7 @@ app.get('/', (req, res) => {
   res.json({
     status: 'Online',
     brand: "Monika's Creation API",
-    database: global.useMockDb ? 'Mock In-Memory' : 'MongoDB Atlas/Local',
+    database: 'MongoDB Atlas/Local',
     timestamp: new Date()
   });
 });
@@ -426,7 +416,7 @@ let server = null;
 
 const startServer = (retries = 5) => {
   server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} in ${global.useMockDb ? 'MOCK' : 'MONGO'} database mode.`);
+    console.log(`Server running on port ${PORT} in MONGO database mode.`);
   });
 
   server.on('error', (err) => {

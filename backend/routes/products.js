@@ -59,7 +59,14 @@ router.get('/:id', async (req, res) => {
 // @access  Private/Admin
 router.post('/', protect, admin, async (req, res) => {
   try {
+    console.log('--- POST /api/products RECEIVED ---');
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+
     const { name, price, description, image, images, category, fabric, stock } = req.body;
+    
+    if (image) {
+      console.log('Uploaded Image URL:', image);
+    }
 
     const createdProduct = await dbAdapter.createProduct({
       name: name || 'Sample Name',
@@ -70,10 +77,16 @@ router.post('/', protect, admin, async (req, res) => {
       fabric: fabric || 'Cotton',
       stock: stock || 0,
       description: description || 'Sample description',
+      isPublished: true,
+      isActive: true
     });
+    
+    console.log('MongoDB save result:', JSON.stringify(createdProduct, null, 2));
+    
     res.status(201).json(createdProduct);
   } catch (err) {
-    console.error(err);
+    console.error('Error in POST /api/products:', err);
+    console.error('Stack Trace:', err.stack);
     return res.status(500).json({
       success: false,
       error: err.message,

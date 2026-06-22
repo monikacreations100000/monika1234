@@ -11,33 +11,7 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
 
-      // Handle mock tokens in simulation/offline mode
-      if (token.startsWith('mock-jwt-')) {
-        const mockData = require('../data/mockData');
-        let user;
-        if (token.includes('owner') || token.includes('admin')) {
-          user = mockData.findUserByEmail('monikacreations100000@gmail.com');
-        } else {
-          user = mockData.findUserByEmail('customer@gmail.com') || mockData.mockUsers[1];
-        }
-        
-        if (!user) {
-          return res.status(401).json({ message: 'Not authorized, mock user not found' });
-        }
-        req.user = user;
-        return next();
-      }
-
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'monikascreationsecret');
-
-      if (global.useMockDb) {
-        const mockData = require('../data/mockData');
-        req.user = mockData.findUserById(decoded.id);
-        if (!req.user) {
-          return res.status(401).json({ message: 'Not authorized, mock user not found' });
-        }
-        return next();
-      }
 
       req.user = await dbAdapter.findUserById(decoded.id);
       if (!req.user) {
