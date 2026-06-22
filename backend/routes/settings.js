@@ -8,11 +8,15 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // @access  Public
 router.get('/upi', async (req, res) => {
   try {
-    const upiSettings = await dbAdapter.getSettings('upi_settings', {
-      upiId: process.env.UPI_ID || 'sethswayam21@okaxis',
-      qrCode: process.env.QR_CODE || ''
+    const defaultSettings = {
+      upiId: process.env.UPI_ID || "",
+      qrCode: process.env.QR_CODE || ""
+    };
+    const upiSettings = await dbAdapter.getSettings('upi_settings', defaultSettings);
+    res.json({
+      upiId: (upiSettings && upiSettings.upiId) ? upiSettings.upiId : "",
+      qrCode: (upiSettings && upiSettings.qrCode) ? upiSettings.qrCode : ""
     });
-    res.json(upiSettings);
   } catch (err) {
     console.error(err);
     return res.status(500).json({

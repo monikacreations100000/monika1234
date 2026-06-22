@@ -13,302 +13,402 @@ const getDbMode = () => {
   return 'mongo';
 };
 
+const logQueryError = (operationName, err) => {
+  console.error(`❌ [DATABASE QUERY ERROR] in ${operationName}:`, err.message || err, err.stack);
+};
+
 // --- USER OPERATIONS ---
 const findUserByEmail = async (email) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.findUserByEmail(email);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.findUserByEmail(email);
+    }
+    return await User.findOne({ email });
+  } catch (err) {
+    logQueryError('findUserByEmail', err);
+    return null;
   }
-  // mongo
-  return await User.findOne({ email });
 };
 
 const createUser = async (userData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.createUser(userData);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.createUser(userData);
+    }
+    return await User.create(userData);
+  } catch (err) {
+    logQueryError('createUser', err);
+    return null;
   }
-  // mongo
-  return await User.create(userData);
 };
 
 const findUserById = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.findUserById(id);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.findUserById(id);
+    }
+    return await User.findById(id);
+  } catch (err) {
+    logQueryError('findUserById', err);
+    return null;
   }
-  // mongo
-  return await User.findById(id);
 };
 
 const getAllUsers = async () => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockUsers;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockUsers;
+    }
+    return await User.find({}).select('-password');
+  } catch (err) {
+    logQueryError('getAllUsers', err);
+    return [];
   }
-  // mongo
-  return await User.find({}).select('-password');
+};
+
+const updateUser = async (id, userData) => {
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      let index = mockData.mockUsers.findIndex(u => u._id === id);
+      if (index !== -1) {
+        mockData.mockUsers[index] = { ...mockData.mockUsers[index], ...userData };
+        return mockData.mockUsers[index];
+      }
+      return null;
+    }
+    return await User.findByIdAndUpdate(id, userData, { new: true });
+  } catch (err) {
+    logQueryError('updateUser', err);
+    return null;
+  }
 };
 
 // --- PRODUCT OPERATIONS ---
 const getAllProducts = async () => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockProducts;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockProducts;
+    }
+    const products = await Product.find({}).lean();
+    return products || [];
+  } catch (err) {
+    logQueryError('getAllProducts', err);
+    return [];
   }
-  // mongo
-  const products = await Product.find({}).lean();
-  return products || [];
 };
 
 const findProductById = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockProducts.find(p => p._id === id);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockProducts.find(p => p._id === id);
+    }
+    return await Product.findById(id).lean();
+  } catch (err) {
+    logQueryError('findProductById', err);
+    return null;
   }
-  // mongo
-  return await Product.findById(id).lean();
 };
 
 const createProduct = async (productData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    const newId = 'prod_mock_' + Math.random().toString(36).substr(2, 9);
-    const prod = {
-      _id: newId,
-      ...productData,
-      rating: 4.5,
-      numReviews: 0,
-      reviews: [],
-      createdAt: new Date().toISOString()
-    };
-    mockData.mockProducts.unshift(prod);
-    return prod;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      const newId = 'prod_mock_' + Math.random().toString(36).substr(2, 9);
+      const prod = {
+        _id: newId,
+        ...productData,
+        rating: 4.5,
+        numReviews: 0,
+        reviews: [],
+        createdAt: new Date().toISOString()
+      };
+      mockData.mockProducts.unshift(prod);
+      return prod;
+    }
+    return await Product.create(productData);
+  } catch (err) {
+    logQueryError('createProduct', err);
+    return null;
   }
-  // mongo
-  return await Product.create(productData);
 };
 
 const updateProduct = async (id, productData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    let index = mockData.mockProducts.findIndex(p => p._id === id);
-    if (index !== -1) {
-      mockData.mockProducts[index] = { ...mockData.mockProducts[index], ...productData };
-      return mockData.mockProducts[index];
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      let index = mockData.mockProducts.findIndex(p => p._id === id);
+      if (index !== -1) {
+        mockData.mockProducts[index] = { ...mockData.mockProducts[index], ...productData };
+        return mockData.mockProducts[index];
+      }
+      return null;
     }
+    return await Product.findByIdAndUpdate(id, productData, { new: true });
+  } catch (err) {
+    logQueryError('updateProduct', err);
     return null;
   }
-  // mongo
-  return await Product.findByIdAndUpdate(id, productData, { new: true });
 };
 
 const deleteProduct = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    mockData.mockProducts = mockData.mockProducts.filter(p => p._id !== id);
-    return true;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      mockData.mockProducts = mockData.mockProducts.filter(p => p._id !== id);
+      return true;
+    }
+    const res = await Product.findByIdAndDelete(id);
+    return !!res;
+  } catch (err) {
+    logQueryError('deleteProduct', err);
+    return false;
   }
-  // mongo
-  const res = await Product.findByIdAndDelete(id);
-  return !!res;
 };
 
 const addProductReview = async (productId, reviewData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    let product = mockData.mockProducts.find(p => p._id === productId);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      let product = mockData.mockProducts.find(p => p._id === productId);
+      if (product) {
+        const review = {
+          _id: 'rev_mock_' + Math.random().toString(36).substr(2, 9),
+          ...reviewData,
+          createdAt: new Date().toISOString()
+        };
+        product.reviews.push(review);
+        product.numReviews = product.reviews.length;
+        product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+        return product;
+      }
+      return null;
+    }
+    const product = await Product.findById(productId);
     if (product) {
-      const review = {
-        _id: 'rev_mock_' + Math.random().toString(36).substr(2, 9),
-        ...reviewData,
-        createdAt: new Date().toISOString()
-      };
-      product.reviews.push(review);
+      product.reviews.push(reviewData);
       product.numReviews = product.reviews.length;
       product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+      await product.save();
       return product;
     }
     return null;
+  } catch (err) {
+    logQueryError('addProductReview', err);
+    return null;
   }
-  // mongo
-  const product = await Product.findById(productId);
-  if (product) {
-    product.reviews.push(reviewData);
-    product.numReviews = product.reviews.length;
-    product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
-    await product.save();
-    return product;
-  }
-  return null;
 };
 
 // --- ORDER OPERATIONS ---
 const createOrder = async (orderData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    const newOrder = {
-      _id: 'order_mock_' + Math.random().toString(36).substr(2, 9),
-      ...orderData,
-      isPaid: false,
-      isDelivered: false,
-      createdAt: new Date().toISOString()
-    };
-    mockData.mockOrders.unshift(newOrder);
-    return newOrder;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      const newOrder = {
+        _id: 'order_mock_' + Math.random().toString(36).substr(2, 9),
+        ...orderData,
+        isPaid: false,
+        isDelivered: false,
+        createdAt: new Date().toISOString()
+      };
+      mockData.mockOrders.unshift(newOrder);
+      return newOrder;
+    }
+    return await Order.create(orderData);
+  } catch (err) {
+    logQueryError('createOrder', err);
+    return null;
   }
-  // mongo
-  return await Order.create(orderData);
 };
 
 const getOrdersByUser = async (userId) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockOrders.filter(o => o.user._id === userId || o.user === userId);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockOrders.filter(o => o.user._id === userId || o.user === userId);
+    }
+    return await Order.find({ user: userId });
+  } catch (err) {
+    logQueryError('getOrdersByUser', err);
+    return [];
   }
-  // mongo
-  return await Order.find({ user: userId });
 };
 
 const findOrderById = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockOrders.find(o => o._id === id);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockOrders.find(o => o._id === id);
+    }
+    return await Order.findById(id).populate('user', 'name email');
+  } catch (err) {
+    logQueryError('findOrderById', err);
+    return null;
   }
-  // mongo
-  return await Order.findById(id).populate('user', 'name email');
 };
 
 const getAllOrders = async () => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockOrders;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockOrders;
+    }
+    return await Order.find({}).populate('user', 'name email');
+  } catch (err) {
+    logQueryError('getAllOrders', err);
+    return [];
   }
-  // mongo
-  return await Order.find({}).populate('user', 'name email');
 };
 
 const updateOrder = async (id, orderData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    let index = mockData.mockOrders.findIndex(o => o._id === id);
-    if (index !== -1) {
-      mockData.mockOrders[index] = { ...mockData.mockOrders[index], ...orderData };
-      return mockData.mockOrders[index];
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      let index = mockData.mockOrders.findIndex(o => o._id === id);
+      if (index !== -1) {
+        mockData.mockOrders[index] = { ...mockData.mockOrders[index], ...orderData };
+        return mockData.mockOrders[index];
+      }
+      return null;
     }
+    return await Order.findByIdAndUpdate(id, orderData, { new: true });
+  } catch (err) {
+    logQueryError('updateOrder', err);
     return null;
   }
-  // mongo
-  return await Order.findByIdAndUpdate(id, orderData, { new: true });
 };
 
 // --- COUPON OPERATIONS ---
 const getAllCoupons = async () => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockCoupons;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockCoupons;
+    }
+    return await Coupon.find({});
+  } catch (err) {
+    logQueryError('getAllCoupons', err);
+    return [];
   }
-  // mongo
-  return await Coupon.find({});
 };
 
 const findCouponByCode = async (code) => {
-  const mode = getDbMode();
-  const codeUpper = code.trim().toUpperCase();
-  if (mode === 'mock') {
-    return mockData.mockCoupons.find(c => c.code === codeUpper);
+  try {
+    const mode = getDbMode();
+    const codeUpper = code.trim().toUpperCase();
+    if (mode === 'mock') {
+      return mockData.mockCoupons.find(c => c.code === codeUpper);
+    }
+    return await Coupon.findOne({ code: codeUpper });
+  } catch (err) {
+    logQueryError('findCouponByCode', err);
+    return null;
   }
-  // mongo
-  return await Coupon.findOne({ code: codeUpper });
 };
 
 const createCoupon = async (couponData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    const newCoupon = {
-      _id: 'coupon_mock_' + Math.random().toString(36).substr(2, 9),
-      ...couponData,
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-    mockData.mockCoupons.unshift(newCoupon);
-    return newCoupon;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      const newCoupon = {
+        _id: 'coupon_mock_' + Math.random().toString(36).substr(2, 9),
+        ...couponData,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      mockData.mockCoupons.unshift(newCoupon);
+      return newCoupon;
+    }
+    return await Coupon.create(couponData);
+  } catch (err) {
+    logQueryError('createCoupon', err);
+    return null;
   }
-  // mongo
-  return await Coupon.create(couponData);
 };
 
 const findCouponById = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockData.mockCoupons.find(c => c._id === id);
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockData.mockCoupons.find(c => c._id === id);
+    }
+    return await Coupon.findById(id);
+  } catch (err) {
+    logQueryError('findCouponById', err);
+    return null;
   }
-  // mongo
-  return await Coupon.findById(id);
 };
 
 const updateCoupon = async (id, couponData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    let index = mockData.mockCoupons.findIndex(c => c._id === id);
-    if (index !== -1) {
-      mockData.mockCoupons[index] = { ...mockData.mockCoupons[index], ...couponData };
-      return mockData.mockCoupons[index];
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      let index = mockData.mockCoupons.findIndex(c => c._id === id);
+      if (index !== -1) {
+        mockData.mockCoupons[index] = { ...mockData.mockCoupons[index], ...couponData };
+        return mockData.mockCoupons[index];
+      }
+      return null;
     }
+    return await Coupon.findByIdAndUpdate(id, couponData, { new: true });
+  } catch (err) {
+    logQueryError('updateCoupon', err);
     return null;
   }
-  // mongo
-  return await Coupon.findByIdAndUpdate(id, couponData, { new: true });
 };
 
 const deleteCoupon = async (id) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    mockData.mockCoupons = mockData.mockCoupons.filter(c => c._id !== id);
-    return true;
-  }
-  // mongo
-  const res = await Coupon.findByIdAndDelete(id);
-  return !!res;
-};
-
-const updateUser = async (id, userData) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    let index = mockData.mockUsers.findIndex(u => u._id === id);
-    if (index !== -1) {
-      mockData.mockUsers[index] = { ...mockData.mockUsers[index], ...userData };
-      return mockData.mockUsers[index];
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      mockData.mockCoupons = mockData.mockCoupons.filter(c => c._id !== id);
+      return true;
     }
-    return null;
+    const res = await Coupon.findByIdAndDelete(id);
+    return !!res;
+  } catch (err) {
+    logQueryError('deleteCoupon', err);
+    return false;
   }
-  // mongo
-  return await User.findByIdAndUpdate(id, userData, { new: true });
 };
 
 const getSettings = async (key, defaultValue) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    return mockSettings[key] !== undefined ? mockSettings[key] : defaultValue;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      return mockSettings[key] !== undefined ? mockSettings[key] : defaultValue;
+    }
+    const setting = await Settings.findOne({ key }).lean();
+    return setting ? setting.value : defaultValue;
+  } catch (err) {
+    logQueryError('getSettings', err);
+    return defaultValue;
   }
-  // mongo
-  const setting = await Settings.findOne({ key }).lean();
-  return setting ? setting.value : defaultValue;
 };
 
 const updateSettings = async (key, value) => {
-  const mode = getDbMode();
-  if (mode === 'mock') {
-    mockSettings[key] = value;
-    return value;
+  try {
+    const mode = getDbMode();
+    if (mode === 'mock') {
+      mockSettings[key] = value;
+      return value;
+    }
+    const setting = await Settings.findOneAndUpdate(
+      { key },
+      { key, value },
+      { upsert: true, new: true }
+    );
+    return setting.value;
+  } catch (err) {
+    logQueryError('updateSettings', err);
+    return null;
   }
-  // mongo
-  const setting = await Settings.findOneAndUpdate(
-    { key },
-    { key, value },
-    { upsert: true, new: true }
-  );
-  return setting.value;
 };
 
 module.exports = {
